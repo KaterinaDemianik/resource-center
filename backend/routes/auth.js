@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { sendVerificationEmail } = require('../utils/email');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -28,14 +28,14 @@ router.post('/register', [
     .withMessage('Please enter a valid email'),
   body('password')
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
+    .withMessage('Password must be at least 6 characters')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation errors',
+        message: 'Validation failed',
         errors: errors.array()
       });
     }
@@ -54,7 +54,7 @@ router.post('/register', [
     // Generate email verification token
     const emailVerificationToken = crypto.randomBytes(32).toString('hex');
 
-    // Create user
+    // Create new user
     const user = new User({
       firstName,
       lastName,
@@ -66,11 +66,15 @@ router.post('/register', [
     await user.save();
 
     // Send verification email
-    await sendVerificationEmail(user.email, emailVerificationToken);
+    try {
+      await sendVerificationEmail(user.email, emailVerificationToken);
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+    }
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully. Please check your email to verify your account.',
+      message: 'Registration successful. Please check your email to verify your account.',
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -97,7 +101,7 @@ router.get('/verify-email/:token', async (req, res) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired verification token'
+        message: 'Invalid verification token'
       });
     }
 
@@ -108,7 +112,7 @@ router.get('/verify-email/:token', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Email verified successfully. You can now log in.'
+      message: 'Email verified successfully'
     });
 
   } catch (error) {
@@ -122,15 +126,20 @@ router.get('/verify-email/:token', async (req, res) => {
 
 // Login user
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
-  body('password').notEmpty().withMessage('Password is required')
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please enter a valid email'),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation errors',
+        message: 'Validation failed',
         errors: errors.array()
       });
     }
@@ -138,9 +147,9 @@ router.post('/login', [
     const { email, password } = req.body;
 
     // Find user
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: 'Invalid credentials'
       });
@@ -148,24 +157,24 @@ router.post('/login', [
 
     // Check if email is verified
     if (!user.emailVerified) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: 'Please verify your email before logging in'
       });
     }
 
-    // Check if account is active
+    // Check if user is active
     if (!user.isActive) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: 'Your account has been deactivated'
+        message: 'Account is deactivated'
       });
     }
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: 'Invalid credentials'
       });
@@ -177,10 +186,6 @@ router.post('/login', [
       process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
-
-    // Set session
-    req.session.userId = user._id;
-    req.session.userRole = user.role;
 
     res.json({
       success: true,
@@ -206,24 +211,16 @@ router.post('/login', [
 
 // Logout user
 router.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({
-        success: false,
-        message: 'Could not log out'
-      });
-    }
-    res.json({
-      success: true,
-      message: 'Logged out successfully'
-    });
+  res.json({
+    success: true,
+    message: 'Logout successful'
   });
 });
 
 // Get current user
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.user.userId).select('-password');
     if (!user) {
       return res.status(404).json({
         success: false,
