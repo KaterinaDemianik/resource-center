@@ -43,10 +43,14 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'Resource Center API is running', timestamp: new Date().toISOString() });
 });
 
-// API routes will be added here
+// RESTful API routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/resources', require('./routes/resources'));
 app.use('/api/admin', require('./routes/admin'));
+
+// GraphQL API endpoint
+const graphqlMiddleware = require('./graphql');
+app.use('/graphql', graphqlMiddleware);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

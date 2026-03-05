@@ -10,7 +10,7 @@
 - **Адміністративна панель** для управління контентом та користувачами
 - **Responsive дизайн** з Bootstrap
 - **Валідація даних** на клієнті та сервері
-- **RESTful API** з можливістю розширення до GraphQL
+- **RESTful API** та **GraphQL API** (дві версії)
 
 ## Технології
 
@@ -21,6 +21,7 @@
 - **Bcrypt** для хешування паролів
 - **Nodemailer** для відправки email
 - **Express-validator** для валідації
+- **GraphQL** + **express-graphql** для GraphQL API
 
 ### Frontend
 - **React 18** з Hooks
@@ -81,6 +82,7 @@ npm run dev
 
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
+- **GraphQL Playground**: http://localhost:5000/graphql
 - **API Health Check**: http://localhost:5000/api/health
 
 ## API Документація
@@ -109,22 +111,58 @@ npm run dev
 - `GET /api/admin/users` - Список користувачів
 - `PATCH /api/admin/users/:id/toggle-active` - Активувати/деактивувати користувача
 
+### GraphQL API
+- **Endpoint**: `POST /graphql`
+- **GraphiQL**: http://localhost:5000/graphql (в режимі розробки)
+
+Приклади запитів:
+```graphql
+# Отримати ресурси
+query {
+  resources(filter: { page: 1, limit: 10, category: "education" }) {
+    success
+    resources { id title description category }
+    total
+  }
+}
+
+# Створити ресурс (потрібна авторизація)
+mutation {
+  createResource(input: {
+    title: "Новий ресурс"
+    description: "Опис"
+    category: "technology"
+  }) {
+    success
+    resource { id title }
+  }
+}
+```
+
+## Тестування API (Postman)
+
+Імпортуйте колекцію з `postman/Resource_Center_API.postman_collection.json` для тестування всіх endpoints.
+
 ## Структура проекту
 
 ```
 Ресурсний центр/
 ├── backend/
-│   ├── models/          # Mongoose моделі
-│   ├── routes/          # Express маршрути
+│   ├── config/          # Конфігурація БД
+│   ├── graphql/         # GraphQL схема та резолвери
 │   ├── middleware/      # Middleware функції
+│   ├── models/          # Mongoose моделі
+│   ├── routes/          # Express маршрути (RESTful)
 │   ├── utils/           # Допоміжні утиліти
 │   ├── server.js        # Головний файл сервера
 │   └── package.json
+├── postman/             # Postman колекція для тестування
 ├── frontend/
 │   ├── src/
 │   │   ├── components/  # React компоненти
-│   │   ├── pages/       # Сторінки застосунку
 │   │   ├── contexts/    # React контексти
+│   │   ├── pages/       # Сторінки застосунку
+│   │   ├── services/    # API сервіси
 │   │   ├── App.jsx      # Головний компонент
 │   │   └── main.jsx     # Точка входу
 │   ├── index.html
