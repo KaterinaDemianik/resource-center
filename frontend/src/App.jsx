@@ -1,61 +1,148 @@
-import React from 'react'
-import { Routes, Route } from 'react-router-dom'
-import { Container } from 'react-bootstrap'
+import React, { useState, useEffect } from 'react'
+import { Routes, Route, Link, useNavigate } from 'react-router-dom'
+import { Container, Navbar, Nav, Button } from 'react-bootstrap'
+import Login from './pages/Login'
+import Register from './pages/Register'
 
-// Простий компонент для тестування
-const SimpleHome = () => (
-  <Container className="mt-5">
-    <div className="text-center">
-      <h1>🎯 Ресурсний центр</h1>
-      <p className="lead">Веб-застосунок для обміну освітніми ресурсами</p>
-      <div className="mt-4">
-        <a href="/login" className="btn btn-primary me-3">Увійти</a>
-        <a href="/register" className="btn btn-outline-primary">Реєстрація</a>
-      </div>
-    </div>
-  </Container>
-)
+// Головна сторінка
+const Home = () => {
+  const [user, setUser] = useState(null);
 
-const SimpleLogin = () => (
-  <Container className="mt-5">
-    <h2>Вхід</h2>
-    <p>Сторінка входу (в розробці)</p>
-  </Container>
-)
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
-const SimpleRegister = () => (
-  <Container className="mt-5">
-    <h2>Реєстрація</h2>
-    <p>Сторінка реєстрації (в розробці)</p>
-  </Container>
-)
-
-function App() {
   return (
-    <div className="App">
-      <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div className="container">
-          <a className="navbar-brand" href="/">Ресурсний центр</a>
-          <div className="navbar-nav ms-auto">
-            <a className="nav-link" href="/">Головна</a>
-            <a className="nav-link" href="/login">Вхід</a>
-            <a className="nav-link" href="/register">Реєстрація</a>
+    <Container className="py-5">
+      <div className="text-center">
+        <h1 className="display-4 fw-bold text-primary mb-4">🎯 Ресурсний центр</h1>
+        <p className="lead text-muted mb-4">
+          Веб-застосунок для обміну освітніми та корисними ресурсами
+        </p>
+        
+        {user ? (
+          <div className="mt-4">
+            <p className="h5">Вітаємо, {user.firstName} {user.lastName}!</p>
+            <p className="text-muted">Ви успішно увійшли в систему</p>
+          </div>
+        ) : (
+          <div className="mt-4">
+            <Link to="/login" className="btn btn-primary btn-lg me-3">
+              Увійти
+            </Link>
+            <Link to="/register" className="btn btn-outline-primary btn-lg">
+              Реєстрація
+            </Link>
+          </div>
+        )}
+
+        <div className="row mt-5">
+          <div className="col-md-4">
+            <div className="card h-100 shadow-sm">
+              <div className="card-body">
+                <h5 className="card-title">📚 Освітні ресурси</h5>
+                <p className="card-text text-muted">
+                  Знаходьте та діліться корисними матеріалами для навчання
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="card h-100 shadow-sm">
+              <div className="card-body">
+                <h5 className="card-title">🔍 Пошук та фільтрація</h5>
+                <p className="card-text text-muted">
+                  Швидко знаходьте потрібні ресурси за категоріями
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="card h-100 shadow-sm">
+              <div className="card-body">
+                <h5 className="card-title">👥 Спільнота</h5>
+                <p className="card-text text-muted">
+                  Приєднуйтесь до спільноти та обмінюйтесь знаннями
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </nav>
+      </div>
+    </Container>
+  );
+};
+
+function App() {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    navigate('/');
+    window.location.reload();
+  };
+
+  return (
+    <div className="App d-flex flex-column min-vh-100">
+      <Navbar bg="primary" variant="dark" expand="lg" className="shadow-sm">
+        <Container>
+          <Navbar.Brand as={Link} to="/" className="fw-bold">
+            🎯 Ресурсний центр
+          </Navbar.Brand>
+          <Navbar.Toggle aria-controls="basic-navbar-nav" />
+          <Navbar.Collapse id="basic-navbar-nav">
+            <Nav className="ms-auto">
+              <Nav.Link as={Link} to="/">Головна</Nav.Link>
+              {user ? (
+                <>
+                  <Nav.Link disabled className="text-light">
+                    {user.firstName} {user.lastName}
+                  </Nav.Link>
+                  <Button 
+                    variant="outline-light" 
+                    size="sm" 
+                    onClick={handleLogout}
+                    className="ms-2"
+                  >
+                    Вийти
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Nav.Link as={Link} to="/login">Вхід</Nav.Link>
+                  <Nav.Link as={Link} to="/register">Реєстрація</Nav.Link>
+                </>
+              )}
+            </Nav>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
       
-      <main>
+      <main className="flex-grow-1">
         <Routes>
-          <Route path="/" element={<SimpleHome />} />
-          <Route path="/login" element={<SimpleLogin />} />
-          <Route path="/register" element={<SimpleRegister />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
         </Routes>
       </main>
       
-      <footer className="bg-light mt-5 py-4">
+      <footer className="bg-light py-4 mt-auto">
         <Container>
           <div className="text-center text-muted">
-            <p>&copy; 2024 Ресурсний центр. Всі права захищені.</p>
+            <p className="mb-0">&copy; 2024 Ресурсний центр. Всі права захищені.</p>
           </div>
         </Container>
       </footer>
