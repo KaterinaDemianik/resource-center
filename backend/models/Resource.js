@@ -5,7 +5,7 @@ const resourceSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Title is required'],
     trim: true,
-    maxlength: [200, 'Title cannot exceed 200 characters']
+    maxlength: [200, 'Title can not exceed 200 characters']
   },
   description: {
     type: String,
