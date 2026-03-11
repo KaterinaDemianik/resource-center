@@ -1,7 +1,7 @@
 import React from 'react'
 import { Container, Row, Col, Card, Badge, Button, Spinner, Alert } from 'react-bootstrap'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery } from 'react-query'
+import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import { FiArrowLeft, FiExternalLink, FiUser, FiCalendar, FiEye, FiTag } from 'react-icons/fi'
 
@@ -13,13 +13,11 @@ const ResourceDetail = () => {
     return response.data
   }
 
-  const { data, isLoading, error } = useQuery(
-    ['resource', id],
-    fetchResource,
-    {
-      enabled: !!id,
-    }
-  )
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['resource', id],
+    queryFn: fetchResource,
+    enabled: !!id,
+  })
 
   const getCategoryBadgeVariant = (category) => {
     const variants = {

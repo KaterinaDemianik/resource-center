@@ -4,6 +4,9 @@ import { Container, Navbar, Nav, Button } from 'react-bootstrap'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import VerifyEmail from './pages/VerifyEmail'
+import Resources from './pages/Resources'
+import ResourceDetail from './pages/ResourceDetail'
+import Profile from './pages/Profile'
 
 // Головна сторінка
 const Home = () => {
@@ -34,8 +37,11 @@ const Home = () => {
             <Link to="/login" className="btn btn-primary btn-lg me-3">
               Увійти
             </Link>
-            <Link to="/register" className="btn btn-outline-primary btn-lg">
+            <Link to="/register" className="btn btn-outline-primary btn-lg me-3">
               Реєстрація
+            </Link>
+            <Link to="/resources" className="btn btn-success btn-lg">
+              Переглянути ресурси
             </Link>
           </div>
         )}
@@ -107,16 +113,17 @@ function App() {
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
               <Nav.Link as={Link} to="/">Головна</Nav.Link>
+              <Nav.Link as={Link} to="/resources">Ресурси</Nav.Link>
               {user ? (
                 <>
-                  <Nav.Link disabled className="text-light">
+                  <Nav.Link as={Link} to="/profile">Профіль</Nav.Link>
+                  <span className="navbar-text text-light me-2">
                     {user.firstName} {user.lastName}
-                  </Nav.Link>
+                  </span>
                   <Button 
                     variant="outline-light" 
                     size="sm" 
                     onClick={handleLogout}
-                    className="ms-2"
                   >
                     Вийти
                   </Button>
@@ -138,6 +145,9 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
+          <Route path="/resources" element={<Resources />} />
+          <Route path="/resources/:id" element={<ResourceDetail />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
       

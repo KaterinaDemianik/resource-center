@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { Container, Row, Col, Card, Form, Button, Badge, Spinner, Alert } from 'react-bootstrap'
-import { useQuery } from 'react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { FiSearch, FiFilter, FiEye, FiCalendar, FiUser } from 'react-icons/fi'
+import './Resources.css'
 
 const Resources = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -20,28 +21,24 @@ const Resources = () => {
     { value: 'other', label: 'Інше' }
   ]
 
-  const fetchResources = async ({ queryKey }) => {
-    const [, page, category, search] = queryKey
+  const fetchResources = async () => {
     const params = new URLSearchParams({
-      page: page.toString(),
+      page: currentPage.toString(),
       limit: '12'
     })
     
-    if (category) params.append('category', category)
-    if (search) params.append('search', search)
+    if (selectedCategory) params.append('category', selectedCategory)
+    if (searchTerm) params.append('search', searchTerm)
 
     const response = await axios.get(`/api/resources?${params}`)
     return response.data
   }
 
-  const { data, isLoading, error, refetch } = useQuery(
-    ['resources', currentPage, selectedCategory, searchTerm],
-    fetchResources,
-    {
-      keepPreviousData: true,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  )
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['resources', currentPage, selectedCategory, searchTerm],
+    queryFn: fetchResources,
+    staleTime: 5 * 60 * 1000,
+  })
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -87,11 +84,11 @@ const Resources = () => {
   return (
     <>
       {/* Search Section */}
-      <section className="search-container">
+      <section style={{ backgroundColor: '#007bff', padding: '4rem 0', marginBottom: '2rem', color: 'white' }}>
         <Container>
           <Row className="justify-content-center">
             <Col lg={8}>
-              <h2 className="text-center mb-4">Знайдіть потрібні ресурси</h2>
+              <h2 className="text-center mb-4" style={{ fontWeight: 600 }}>Знайдіть потрібні ресурси</h2>
               <Form onSubmit={handleSearch}>
                 <Row className="g-2">
                   <Col md={8}>

@@ -1,23 +1,31 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Container, Row, Col, Card, Button, Form, Tab, Tabs, Badge, Alert } from 'react-bootstrap'
-import { useAuth } from '../contexts/AuthContext'
-import { useQuery } from 'react-query'
-import { useForm } from 'react-hook-form'
+import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import { FiUser, FiSettings, FiBook, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi'
 
 const Profile = () => {
-  const { user, updateUser } = useAuth()
+  const [user, setUser] = useState(null)
   const [activeTab, setActiveTab] = useState('profile')
   const [isEditing, setIsEditing] = useState(false)
-
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
-    defaultValues: {
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      email: user?.email || ''
-    }
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: ''
   })
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      const userData = JSON.parse(storedUser)
+      setUser(userData)
+      setFormData({
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
+        email: userData.email || ''
+      })
+    }
+  }, [])
 
   // Fetch user's resources
   const fetchUserResources = async () => {
@@ -25,23 +33,29 @@ const Profile = () => {
     return response.data
   }
 
-  const { data: resourcesData, isLoading: resourcesLoading, refetch: refetchResources } = useQuery(
-    'userResources',
-    fetchUserResources,
-    {
-      enabled: activeTab === 'resources'
-    }
-  )
+  const { data: resourcesData, isLoading: resourcesLoading, refetch: refetchResources } = useQuery({
+    queryKey: ['userResources'],
+    queryFn: fetchUserResources,
+    enabled: activeTab === 'resources'
+  })
 
-  const onSubmitProfile = async (data) => {
+  const onSubmitProfile = async (e) => {
+    e.preventDefault()
     try {
-      // Profile update logic would go here
-      console.log('Profile update:', data)
-      updateUser(data)
+      const updatedUser = { ...user, ...formData }
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      setUser(updatedUser)
       setIsEditing(false)
     } catch (error) {
       console.error('Profile update error:', error)
     }
+  }
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    })
   }
 
   const getCategoryBadgeVariant = (category) => {
@@ -137,14 +151,9 @@ const Profile = () => {
                     size="sm"
                     onClick={() => {
                       if (isEditing) {
-                        handleSubmit(onSubmitProfile)()
+                        onSubmitProfile({ preventDefault: () => {} })
                       } else {
                         setIsEditing(true)
-                        reset({
-                          firstName: user?.firstName || '',
-                          lastName: user?.lastName || '',
-                          email: user?.email || ''
-                        })
                       }
                     }}
                   >
@@ -160,22 +169,19 @@ const Profile = () => {
                     </Alert>
                   )}
 
-                  <Form onSubmit={handleSubmit(onSubmitProfile)}>
+                  <Form onSubmit={onSubmitProfile}>
                     <Row>
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Ім'я</Form.Label>
                           <Form.Control
                             type="text"
-                            {...register('firstName', {
-                              required: 'Ім\'я обов\'язкове'
-                            })}
-                            isInvalid={!!errors.firstName}
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={handleInputChange}
                             disabled={!isEditing}
+                            required
                           />
-                          <Form.Control.Feedback type="invalid">
-                            {errors.firstName?.message}
-                          </Form.Control.Feedback>
                         </Form.Group>
                       </Col>
                       <Col md={6}>
@@ -183,15 +189,12 @@ const Profile = () => {
                           <Form.Label>Прізвище</Form.Label>
                           <Form.Control
                             type="text"
-                            {...register('lastName', {
-                              required: 'Прізвище обов\'язкове'
-                            })}
-                            isInvalid={!!errors.lastName}
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleInputChange}
                             disabled={!isEditing}
+                            required
                           />
-                          <Form.Control.Feedback type="invalid">
-                            {errors.lastName?.message}
-                          </Form.Control.Feedback>
                         </Form.Group>
                       </Col>
                     </Row>
@@ -200,15 +203,12 @@ const Profile = () => {
                       <Form.Label>Email</Form.Label>
                       <Form.Control
                         type="email"
-                        {...register('email', {
-                          required: 'Email обов\'язковий'
-                        })}
-                        isInvalid={!!errors.email}
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
                         disabled={!isEditing}
+                        required
                       />
-                      <Form.Control.Feedback type="invalid">
-                        {errors.email?.message}
-                      </Form.Control.Feedback>
                     </Form.Group>
 
                     {isEditing && (
