@@ -50,9 +50,7 @@ const Home = () => {
       <Container className="my-5">
         <Row className="text-center mb-5">
           <Col>
-            <h2 className="fw-bold">Чому обирають наш ресурсний центр?</h2>
             <p className="text-muted">
-              Ми створили платформу, яка допомагає користувачам знаходити та ділитися якісними ресурсами
             </p>
           </Col>
         </Row>

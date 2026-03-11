@@ -3,6 +3,7 @@ import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 import { Container, Navbar, Nav, Button } from 'react-bootstrap'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import VerifyEmail from './pages/VerifyEmail'
 
 // Головна сторінка
 const Home = () => {
@@ -18,7 +19,7 @@ const Home = () => {
   return (
     <Container className="py-5">
       <div className="text-center">
-        <h1 className="display-4 fw-bold text-primary mb-4">🎯 Ресурсний центр</h1>
+        <h3 className="display-4 fw-bold text-primary mb-4">Ресурсний центр</h3>
         <p className="lead text-muted mb-4">
           Веб-застосунок для обміну освітніми та корисними ресурсами
         </p>
@@ -43,7 +44,7 @@ const Home = () => {
           <div className="col-md-4">
             <div className="card h-100 shadow-sm">
               <div className="card-body">
-                <h5 className="card-title">📚 Освітні ресурси</h5>
+                <h5 className="card-title">Освітні ресурси</h5>
                 <p className="card-text text-muted">
                   Знаходьте та діліться корисними матеріалами для навчання
                 </p>
@@ -53,7 +54,7 @@ const Home = () => {
           <div className="col-md-4">
             <div className="card h-100 shadow-sm">
               <div className="card-body">
-                <h5 className="card-title">🔍 Пошук та фільтрація</h5>
+                <h5 className="card-title">Пошук та фільтрація</h5>
                 <p className="card-text text-muted">
                   Швидко знаходьте потрібні ресурси за категоріями
                 </p>
@@ -63,7 +64,7 @@ const Home = () => {
           <div className="col-md-4">
             <div className="card h-100 shadow-sm">
               <div className="card-body">
-                <h5 className="card-title">👥 Спільнота</h5>
+                <h5 className="card-title">Спільнота</h5>
                 <p className="card-text text-muted">
                   Приєднуйтесь до спільноти та обмінюйтесь знаннями
                 </p>
@@ -100,7 +101,7 @@ function App() {
       <Navbar bg="primary" variant="dark" expand="lg" className="shadow-sm">
         <Container>
           <Navbar.Brand as={Link} to="/" className="fw-bold">
-            🎯 Ресурсний центр
+            Ресурсний центр
           </Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
@@ -136,6 +137,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
         </Routes>
       </main>
       
