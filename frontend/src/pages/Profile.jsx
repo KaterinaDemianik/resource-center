@@ -13,6 +13,14 @@ const Profile = () => {
     lastName: '',
     email: ''
   })
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
@@ -56,6 +64,73 @@ const Profile = () => {
       ...formData,
       [e.target.name]: e.target.value
     })
+  }
+
+  const handlePasswordChange = (e) => {
+    setPasswordData({
+      ...passwordData,
+      [e.target.name]: e.target.value
+    })
+    setPasswordError('')
+    setPasswordSuccess('')
+  }
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordSuccess('')
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('Нові паролі не співпадають')
+      return
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError('Новий пароль повинен містити мінімум 6 символів')
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.post('/api/auth/change-password', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.data.success) {
+        setPasswordSuccess('Пароль успішно змінено')
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        })
+      }
+    } catch (error) {
+      setPasswordError(error.response?.data?.message || 'Помилка зміни паролю')
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.delete('/api/auth/delete-account', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.data.success) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/'
+      }
+    } catch (error) {
+      alert('Помилка видалення акаунту: ' + (error.response?.data?.message || 'Невідома помилка'))
+    }
   }
 
   const getCategoryBadgeVariant = (category) => {
@@ -308,30 +383,118 @@ const Profile = () => {
 
             {/* Settings Tab */}
             <Tab eventKey="settings" title={<><FiSettings className="me-2" />Налаштування</>}>
-              <Card className="shadow-sm">
+              <Card className="shadow-sm mb-4">
                 <Card.Header>
-                  <h5 className="mb-0">Налаштування акаунту</h5>
+                  <h5 className="mb-0">Зміна паролю</h5>
+                </Card.Header>
+                <Card.Body>
+                  {passwordError && (
+                    <Alert variant="danger" onClose={() => setPasswordError('')} dismissible>
+                      {passwordError}
+                    </Alert>
+                  )}
+                  {passwordSuccess && (
+                    <Alert variant="success" onClose={() => setPasswordSuccess('')} dismissible>
+                      {passwordSuccess}
+                    </Alert>
+                  )}
+
+                  <Form onSubmit={handleChangePassword}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Поточний пароль</Form.Label>
+                      <Form.Control
+                        type="password"
+                        name="currentPassword"
+                        value={passwordData.currentPassword}
+                        onChange={handlePasswordChange}
+                        required
+                        placeholder="Введіть поточний пароль"
+                      />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                      <Form.Label>Новий пароль</Form.Label>
+                      <Form.Control
+                        type="password"
+                        name="newPassword"
+                        value={passwordData.newPassword}
+                        onChange={handlePasswordChange}
+                        required
+                        placeholder="Введіть новий пароль (мінімум 6 символів)"
+                      />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                      <Form.Label>Підтвердіть новий пароль</Form.Label>
+                      <Form.Control
+                        type="password"
+                        name="confirmPassword"
+                        value={passwordData.confirmPassword}
+                        onChange={handlePasswordChange}
+                        required
+                        placeholder="Повторіть новий пароль"
+                      />
+                    </Form.Group>
+
+                    <Button type="submit" variant="primary">
+                      Змінити пароль
+                    </Button>
+                  </Form>
+                </Card.Body>
+              </Card>
+
+              <Card className="shadow-sm mb-4">
+                <Card.Header>
+                  <h5 className="mb-0">Сповіщення</h5>
                 </Card.Header>
                 <Card.Body>
                   <Alert variant="info">
                     <Alert.Heading>В розробці</Alert.Heading>
-                    <p>Додаткові налаштування акаунту будуть додані в наступних версіях.</p>
+                    <p>Налаштування сповіщень будуть додані в наступних версіях.</p>
                   </Alert>
+                </Card.Body>
+              </Card>
 
-                  <div className="mb-4">
-                    <h6>Зміна паролю</h6>
-                    <p className="text-muted">Функція зміни паролю буде додана пізніше.</p>
-                  </div>
-
-                  <div className="mb-4">
-                    <h6>Сповіщення</h6>
-                    <p className="text-muted">Налаштування сповіщень будуть додані пізніше.</p>
-                  </div>
-
-                  <div className="border-top pt-4">
-                    <h6 className="text-danger">Небезпечна зона</h6>
-                    <p className="text-muted">Видалення акаунту буде додано пізніше.</p>
-                  </div>
+              <Card className="shadow-sm border-danger">
+                <Card.Header className="bg-danger text-white">
+                  <h5 className="mb-0">Небезпечна зона</h5>
+                </Card.Header>
+                <Card.Body>
+                  <h6>Видалення акаунту</h6>
+                  <p className="text-muted">
+                    Після видалення акаунту всі ваші дані будуть безповоротно втрачені. 
+                    Ця дія не може бути скасована.
+                  </p>
+                  
+                  {!showDeleteConfirm ? (
+                    <Button 
+                      variant="outline-danger" 
+                      onClick={() => setShowDeleteConfirm(true)}
+                    >
+                      Видалити акаунт
+                    </Button>
+                  ) : (
+                    <div className="mt-3">
+                      <Alert variant="danger">
+                        <Alert.Heading>Ви впевнені?</Alert.Heading>
+                        <p>Ця дія незворотна. Всі ваші дані будуть видалені назавжди.</p>
+                        <div className="d-flex gap-2">
+                          <Button 
+                            variant="danger" 
+                            onClick={handleDeleteAccount}
+                          >
+                            Так, видалити мій акаунт
+                          </Button>
+                          <Button 
+                            variant="secondary" 
+                            onClick={() => setShowDeleteConfirm(false)}
+                          >
+                            Скасувати
+                          </Button>
+                        </div>
+                      </Alert>
+                    </div>
+                  )}
                 </Card.Body>
               </Card>
             </Tab>
