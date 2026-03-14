@@ -301,6 +301,7 @@ const AdminDashboard = () => {
                                       size="sm"
                                       onClick={() => handleApproveResource(resource._id)}
                                       disabled={resource.isApproved}
+                                      title={resource.isApproved ? 'Вже схвалено' : 'Схвалити ресурс'}
                                     >
                                       <FiCheck />
                                     </Button>
@@ -308,7 +309,7 @@ const AdminDashboard = () => {
                                       variant="danger"
                                       size="sm"
                                       onClick={() => handleRejectResource(resource._id)}
-                                      disabled={!resource.isApproved}
+                                      title="Відхилити ресурс"
                                     >
                                       <FiX />
                                     </Button>
