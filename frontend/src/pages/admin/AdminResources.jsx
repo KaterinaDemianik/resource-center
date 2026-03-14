@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { Container, Table, Badge, Button, Form, InputGroup, Pagination, Alert } from 'react-bootstrap';
-import { FiSearch, FiToggleLeft, FiToggleRight, FiTrash2 } from 'react-icons/fi';
+import { Container, Table, Badge, Button, Form, InputGroup, Pagination, Alert, Nav } from 'react-bootstrap';
+import { FiSearch, FiToggleLeft, FiToggleRight, FiTrash2, FiBook, FiClock, FiCheckCircle } from 'react-icons/fi';
 
-const fetchResources = async ({ page, search }) => {
+const fetchResources = async ({ page, search, status }) => {
   const token = localStorage.getItem('token');
   const { data } = await axios.get('/api/admin/resources', {
-    params: { page, limit: 15, search },
+    params: { page, limit: 15, search, status },
     headers: { Authorization: `Bearer ${token}` }
   });
   return data;
@@ -16,11 +16,12 @@ const fetchResources = async ({ page, search }) => {
 const AdminResources = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['admin-resources', page, search],
-    queryFn: () => fetchResources({ page, search }),
+    queryKey: ['admin-resources', page, search, activeTab],
+    queryFn: () => fetchResources({ page, search, status: activeTab }),
   });
 
   const toggleMutation = useMutation({
@@ -102,6 +103,58 @@ const AdminResources = () => {
           {data?.data?.pagination?.total || 0} всього
         </Badge>
       </div>
+
+      {/* Вкладки фільтрації */}
+      <Nav variant="tabs" className="mb-4" style={{ borderBottom: '2px solid #2d3748' }}>
+        <Nav.Item>
+          <Nav.Link
+            active={activeTab === 'all'}
+            onClick={() => { setActiveTab('all'); setPage(1); }}
+            style={{
+              color: activeTab === 'all' ? '#a78bfa' : '#94a3b8',
+              backgroundColor: activeTab === 'all' ? 'rgba(124,58,237,0.1)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'all' ? '2px solid #a78bfa' : '2px solid transparent',
+              cursor: 'pointer'
+            }}
+          >
+            <FiBook className="me-2" />
+            Ресурси
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link
+            active={activeTab === 'pending'}
+            onClick={() => { setActiveTab('pending'); setPage(1); }}
+            style={{
+              color: activeTab === 'pending' ? '#a78bfa' : '#94a3b8',
+              backgroundColor: activeTab === 'pending' ? 'rgba(124,58,237,0.1)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'pending' ? '2px solid #a78bfa' : '2px solid transparent',
+              cursor: 'pointer'
+            }}
+          >
+            <FiClock className="me-2" />
+            Ресурси на модерації
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link
+            active={activeTab === 'approved'}
+            onClick={() => { setActiveTab('approved'); setPage(1); }}
+            style={{
+              color: activeTab === 'approved' ? '#a78bfa' : '#94a3b8',
+              backgroundColor: activeTab === 'approved' ? 'rgba(124,58,237,0.1)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'approved' ? '2px solid #a78bfa' : '2px solid transparent',
+              cursor: 'pointer'
+            }}
+          >
+            <FiCheckCircle className="me-2" />
+            Схвалені
+          </Nav.Link>
+        </Nav.Item>
+      </Nav>
 
       {error && (
         <Alert variant="danger" style={{ marginBottom: '1rem' }}>
