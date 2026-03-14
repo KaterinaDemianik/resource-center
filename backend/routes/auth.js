@@ -100,23 +100,19 @@ router.get('/verify-email/:token', async (req, res) => {
     const user = await User.findOne({ emailVerificationToken: token });
     
     if (!user) {
-      // Check if there's a user with this email that's already verified
-      const verifiedUser = await User.findOne({ 
-        emailVerified: true,
-        emailVerificationToken: null 
-      });
-      
-      if (verifiedUser) {
-        return res.status(200).json({
-          success: true,
-          message: 'Email already verified. You can log in now.',
-          alreadyVerified: true
-        });
-      }
-      
+      // Token not found - could be invalid or already used
       return res.status(400).json({
         success: false,
-        message: 'Invalid verification token'
+        message: 'Invalid or expired verification token'
+      });
+    }
+
+    // If user is already verified, return success without changing anything
+    if (user.emailVerified) {
+      return res.status(200).json({
+        success: true,
+        message: 'Email already verified. You can log in now.',
+        alreadyVerified: true
       });
     }
 
@@ -211,7 +207,9 @@ router.post('/login', [
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        role: user.role
+        role: user.role,
+        emailVerified: user.emailVerified,
+        isActive: user.isActive
       }
     });
 
