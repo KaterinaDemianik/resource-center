@@ -24,8 +24,8 @@ router.post('/register', [
     .withMessage('Last name cannot exceed 50 characters'),
   body('email')
     .isEmail()
-    .normalizeEmail()
-    .withMessage('Please enter a valid email'),
+    .withMessage('Please enter a valid email')
+    .customSanitizer(value => value.toLowerCase()),
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters')
@@ -143,8 +143,8 @@ router.get('/verify-email/:token', async (req, res) => {
 router.post('/login', [
   body('email')
     .isEmail()
-    .normalizeEmail()
-    .withMessage('Please enter a valid email'),
+    .withMessage('Please enter a valid email')
+    .customSanitizer(value => value.toLowerCase()),
   body('password')
     .notEmpty()
     .withMessage('Password is required')
