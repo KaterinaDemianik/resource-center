@@ -438,18 +438,31 @@ const Profile = () => {
                                 }
                               </Card.Text>
 
-                              <div className="d-flex justify-content-between align-items-center mt-auto">
+                              <div className="mt-2 mb-2">
+                                <div className="d-flex justify-content-between text-muted small">
+                                  <span>
+                                    <FiUser className="me-1" />
+                                    {resource.author?.firstName} {resource.author?.lastName}
+                                  </span>
+                                  <span>
+                                    <FiBook className="me-1" />
+                                    {resource.views || 0} переглядів
+                                  </span>
+                                </div>
                                 <small className="text-muted">
                                   {formatDate(resource.createdAt)}
                                 </small>
-                                <div>
-                                  <Button variant="outline-primary" size="sm" className="me-2">
-                                    <FiEdit />
-                                  </Button>
-                                  <Button variant="outline-danger" size="sm">
-                                    <FiTrash2 />
-                                  </Button>
-                                </div>
+                              </div>
+
+                              <div className="d-flex justify-content-end gap-2">
+                                <Button variant="outline-primary" size="sm">
+                                  <FiEdit className="me-1" />
+                                  Редагувати
+                                </Button>
+                                <Button variant="outline-danger" size="sm">
+                                  <FiTrash2 className="me-1" />
+                                  Видалити
+                                </Button>
                               </div>
                             </Card.Body>
                           </Card>
