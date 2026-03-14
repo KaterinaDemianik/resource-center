@@ -31,13 +31,16 @@ router.get('/resources', adminAuth, [
     let query = {};
     switch (req.query.status) {
       case 'pending':
-        query = { isApproved: false };
+        query = { isApproved: false, rejectedAt: null };
         break;
       case 'approved':
         query = { isApproved: true, isActive: true };
         break;
       case 'inactive':
         query = { isActive: false, isApproved: true };
+        break;
+      case 'rejected':
+        query = { rejectedAt: { $ne: null } };
         break;
       default:
         // 'all' or no filter - show everything
@@ -91,6 +94,7 @@ router.patch('/resources/:id/approve', adminAuth, async (req, res) => {
     resource.isActive = true;
     resource.approvedBy = req.user.userId;
     resource.approvedAt = new Date();
+    resource.rejectedAt = null;
     await resource.save();
 
     await resource.populate(['author', 'approvedBy']);
@@ -134,6 +138,7 @@ router.patch('/resources/:id/reject', adminAuth, async (req, res) => {
     resource.isActive = false;
     resource.approvedBy = null;
     resource.approvedAt = null;
+    resource.rejectedAt = new Date();
     await resource.save();
 
     await resource.populate('author');
@@ -334,7 +339,7 @@ router.get('/stats', adminAuth, async (req, res) => {
       User.countDocuments({ emailVerified: false }),
       Resource.countDocuments(),
       Resource.countDocuments({ isApproved: true, isActive: true }),
-      Resource.countDocuments({ isApproved: false }),
+      Resource.countDocuments({ isApproved: false, rejectedAt: null }),
       Resource.countDocuments({ isActive: false, isApproved: true })
     ]);
 

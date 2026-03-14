@@ -56,6 +56,10 @@ const resourceSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  rejectedAt: {
+    type: Date,
+    default: null
+  },
   views: {
     type: Number,
     default: 0
