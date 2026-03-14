@@ -29,7 +29,7 @@ const Profile = () => {
     title: '',
     description: '',
     category: 'technology',
-    url: '',
+    urls: [''],
     tags: ''
   })
 
@@ -188,12 +188,14 @@ const Profile = () => {
     try {
       const token = localStorage.getItem('token')
       const tagsArray = newResource.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+      const urlsArray = newResource.urls.filter(url => url.trim() !== '')
       
       const response = await axios.post('/api/resources', {
         title: newResource.title,
         description: newResource.description,
         category: newResource.category,
-        url: newResource.url,
+        url: urlsArray[0] || '',
+        urls: urlsArray,
         tags: tagsArray
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -205,7 +207,7 @@ const Profile = () => {
           title: '',
           description: '',
           category: 'technology',
-          url: '',
+          urls: [''],
           tags: ''
         })
         refetchResources()
@@ -221,12 +223,14 @@ const Profile = () => {
     try {
       const token = localStorage.getItem('token')
       const tagsArray = editingResource.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+      const urlsArray = editingResource.urls.filter(url => url.trim() !== '')
       
       const response = await axios.put(`/api/resources/${editingResource._id}`, {
         title: editingResource.title,
         description: editingResource.description,
         category: editingResource.category,
-        url: editingResource.url,
+        url: urlsArray[0] || '',
+        urls: urlsArray,
         tags: tagsArray
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -266,6 +270,7 @@ const Profile = () => {
   const openEditModal = (resource) => {
     setEditingResource({
       ...resource,
+      urls: resource.urls && resource.urls.length > 0 ? resource.urls : [resource.url || ''],
       tags: resource.tags.join(', ')
     })
     setShowEditResource(true)
@@ -707,13 +712,41 @@ const Profile = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>URL (посилання)</Form.Label>
-              <Form.Control
-                type="url"
-                placeholder="https://example.com"
-                value={newResource.url}
-                onChange={(e) => setNewResource({...newResource, url: e.target.value})}
-              />
+              <Form.Label>Посилання</Form.Label>
+              {newResource.urls.map((url, index) => (
+                <div key={index} className="d-flex gap-2 mb-2">
+                  <Form.Control
+                    type="url"
+                    placeholder="https://example.com"
+                    value={url}
+                    onChange={(e) => {
+                      const newUrls = [...newResource.urls]
+                      newUrls[index] = e.target.value
+                      setNewResource({...newResource, urls: newUrls})
+                    }}
+                  />
+                  {newResource.urls.length > 1 && (
+                    <Button 
+                      variant="outline-danger" 
+                      size="sm"
+                      onClick={() => {
+                        const newUrls = newResource.urls.filter((_, i) => i !== index)
+                        setNewResource({...newResource, urls: newUrls})
+                      }}
+                    >
+                      <FiTrash2 />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button 
+                variant="outline-primary" 
+                size="sm"
+                onClick={() => setNewResource({...newResource, urls: [...newResource.urls, '']})}
+              >
+                <FiPlus className="me-1" />
+                Додати посилання
+              </Button>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -789,13 +822,41 @@ const Profile = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>URL (посилання)</Form.Label>
-                <Form.Control
-                  type="url"
-                  placeholder="https://example.com"
-                  value={editingResource.url || ''}
-                  onChange={(e) => setEditingResource({...editingResource, url: e.target.value})}
-                />
+                <Form.Label>Посилання</Form.Label>
+                {editingResource.urls.map((url, index) => (
+                  <div key={index} className="d-flex gap-2 mb-2">
+                    <Form.Control
+                      type="url"
+                      placeholder="https://example.com"
+                      value={url}
+                      onChange={(e) => {
+                        const newUrls = [...editingResource.urls]
+                        newUrls[index] = e.target.value
+                        setEditingResource({...editingResource, urls: newUrls})
+                      }}
+                    />
+                    {editingResource.urls.length > 1 && (
+                      <Button 
+                        variant="outline-danger" 
+                        size="sm"
+                        onClick={() => {
+                          const newUrls = editingResource.urls.filter((_, i) => i !== index)
+                          setEditingResource({...editingResource, urls: newUrls})
+                        }}
+                      >
+                        <FiTrash2 />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button 
+                  variant="outline-primary" 
+                  size="sm"
+                  onClick={() => setEditingResource({...editingResource, urls: [...editingResource.urls, '']})}
+                >
+                  <FiPlus className="me-1" />
+                  Додати посилання
+                </Button>
               </Form.Group>
 
               <Form.Group className="mb-3">

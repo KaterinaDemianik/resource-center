@@ -29,6 +29,11 @@ const resourceSchema = new mongoose.Schema({
     trim: true,
     match: [/^https?:\/\/.+/, 'Please enter a valid URL']
   },
+  urls: [{
+    type: String,
+    trim: true,
+    match: [/^https?:\/\/.+/, 'Please enter a valid URL']
+  }],
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
