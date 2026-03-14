@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { Container, Row, Col, Nav, Card } from 'react-bootstrap'
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { FiUsers, FiBook, FiBarChart2, FiHome } from 'react-icons/fi'
 
@@ -30,113 +29,104 @@ const AdminLayout = () => {
     return null
   }
 
-  const isActive = (path) => {
-    return location.pathname === path ? 'active' : ''
-  }
-
   return (
-    <Container fluid className="py-4">
-      <Row>
-        {/* Sidebar */}
-        <Col md={3} lg={2} className="mb-4">
-          <Card 
-            className="sidebar"
+    <div style={{
+      display: 'flex',
+      gap: '1.5rem',
+      padding: '2rem',
+      minHeight: 'calc(100vh - 70px)',
+      alignItems: 'flex-start'
+    }}>
+      {/* Sidebar */}
+      <div style={{
+        width: '200px',
+        flexShrink: 0,
+        backgroundColor: '#16213e',
+        border: '1px solid #2d3748',
+        borderRadius: '12px',
+        padding: '1.5rem 1rem'
+      }}>
+        <h5 style={{ whiteSpace: 'nowrap', color: '#e2e8f0', marginBottom: '1.5rem' }}>
+          Адмін панель
+        </h5>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <Link 
+            to="/admin"
             style={{
-              minWidth: '200px',
-              width: '200px',
-              backgroundColor: '#16213e',
-              borderRadius: '12px',
-              marginTop: '2.5rem'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              color: location.pathname === '/admin' ? '#a78bfa' : '#94a3b8',
+              whiteSpace: 'nowrap',
+              textDecoration: 'none',
+              transition: 'all 0.2s'
             }}
           >
-            <Card.Body style={{ padding: '1.5rem 1rem' }}>
-              <h5 className="mb-4" style={{ whiteSpace: 'nowrap', color: '#e2e8f0' }}>
-                Адмін панель
-              </h5>
-              <Nav className="flex-column">
-                <Nav.Link 
-                  as={Link} 
-                  to="/admin" 
-                  className={isActive('/admin')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    color: location.pathname === '/admin' ? '#a78bfa' : '#94a3b8',
-                    whiteSpace: 'nowrap',
-                    textDecoration: 'none'
-                  }}
-                >
-                  <FiBarChart2 size={18} />
-                  Статистика
-                </Nav.Link>
-                <Nav.Link 
-                  as={Link} 
-                  to="/admin/resources" 
-                  className={isActive('/admin/resources')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    color: location.pathname === '/admin/resources' ? '#a78bfa' : '#94a3b8',
-                    whiteSpace: 'nowrap',
-                    textDecoration: 'none'
-                  }}
-                >
-                  <FiBook size={18} />
-                  Ресурси
-                </Nav.Link>
-                <Nav.Link 
-                  as={Link} 
-                  to="/admin/users" 
-                  className={isActive('/admin/users')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    color: location.pathname === '/admin/users' ? '#a78bfa' : '#94a3b8',
-                    whiteSpace: 'nowrap',
-                    textDecoration: 'none'
-                  }}
-                >
-                  <FiUsers size={18} />
-                  Користувачі
-                </Nav.Link>
-                <hr style={{ borderColor: '#2d3748', margin: '1rem 0' }} />
-                <Nav.Link 
-                  as={Link} 
-                  to="/"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    color: '#94a3b8',
-                    whiteSpace: 'nowrap',
-                    textDecoration: 'none'
-                  }}
-                >
-                  <FiHome size={18} />
-                  На головну
-                </Nav.Link>
-              </Nav>
-            </Card.Body>
-          </Card>
-        </Col>
+            <FiBarChart2 size={18} />
+            Статистика
+          </Link>
+          <Link 
+            to="/admin/resources"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              color: location.pathname === '/admin/resources' ? '#a78bfa' : '#94a3b8',
+              whiteSpace: 'nowrap',
+              textDecoration: 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            <FiBook size={18} />
+            Ресурси
+          </Link>
+          <Link 
+            to="/admin/users"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              color: location.pathname === '/admin/users' ? '#a78bfa' : '#94a3b8',
+              whiteSpace: 'nowrap',
+              textDecoration: 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            <FiUsers size={18} />
+            Користувачі
+          </Link>
+          <hr style={{ borderColor: '#2d3748', margin: '1rem 0' }} />
+          <Link 
+            to="/"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              color: '#94a3b8',
+              whiteSpace: 'nowrap',
+              textDecoration: 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            <FiHome size={18} />
+            На головну
+          </Link>
+        </div>
+      </div>
 
-        {/* Main Content */}
-        <Col md={9} lg={10}>
-          <Outlet />
-        </Col>
-      </Row>
-    </Container>
+      {/* Main Content */}
+      <div style={{ flex: 1 }}>
+        <Outlet />
+      </div>
+    </div>
   )
 }
 
