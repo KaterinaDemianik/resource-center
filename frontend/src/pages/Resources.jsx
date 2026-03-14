@@ -252,49 +252,46 @@ const Resources = () => {
                     <Row className="g-4">
                       {data?.data?.resources?.map((resource) => (
                         <Col md={6} xl={4} key={resource._id}>
-                          <Card 
-                            className="h-100 resource-card card-hover"
-                            style={{
-                              backgroundColor: '#16213e',
-                              border: '1px solid #2d3748',
-                              borderRadius: '12px',
-                              transition: 'border-color 0.2s, transform 0.2s'
-                            }}
+                          <Link 
+                            to={`/resources/${resource._id}`}
+                            style={{ textDecoration: 'none' }}
                           >
-                            <Card.Body className="d-flex flex-column">
-                              <div className="mb-2">
-                                <Badge 
-                                  bg={getCategoryBadgeVariant(resource.category)}
-                                  className="category-badge"
+                            <Card 
+                              className="h-100 resource-card card-hover"
+                              style={{
+                                backgroundColor: '#16213e',
+                                border: '1px solid #2d3748',
+                                borderRadius: '12px',
+                                transition: 'border-color 0.2s, transform 0.2s',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Card.Body className="d-flex flex-column">
+                                <div className="mb-2">
+                                  <Badge 
+                                    bg={getCategoryBadgeVariant(resource.category)}
+                                    className="category-badge"
+                                    style={{
+                                      fontSize: '11px',
+                                      padding: '4px 10px',
+                                      borderRadius: '20px'
+                                    }}
+                                  >
+                                    {categories.find(c => c.value === resource.category)?.label || resource.category}
+                                  </Badge>
+                                </div>
+                                
+                                <Card.Title 
+                                  className="mb-2"
                                   style={{
-                                    fontSize: '11px',
-                                    padding: '4px 10px',
-                                    borderRadius: '20px'
-                                  }}
-                                >
-                                  {categories.find(c => c.value === resource.category)?.label || resource.category}
-                                </Badge>
-                              </div>
-                              
-                              <Card.Title 
-                                className="mb-2"
-                                style={{
-                                  color: '#e2e8f0',
-                                  fontSize: '15px',
-                                  fontWeight: 600,
-                                  lineHeight: 1.4
-                                }}
-                              >
-                                <Link 
-                                  to={`/resources/${resource._id}`}
-                                  style={{
-                                    textDecoration: 'none',
-                                    color: '#e2e8f0'
+                                    color: '#e2e8f0',
+                                    fontSize: '15px',
+                                    fontWeight: 600,
+                                    lineHeight: 1.4
                                   }}
                                 >
                                   {resource.title}
-                                </Link>
-                              </Card.Title>
+                                </Card.Title>
                               
                               <Card.Text className="text-muted small flex-grow-1">
                                 {resource.description.length > 100 
@@ -348,7 +345,11 @@ const Resources = () => {
                                     <Button 
                                       variant="outline-primary" 
                                       size="sm"
-                                      onClick={() => window.location.href = `/resources/${resource._id}`}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        window.location.href = `/resources/${resource._id}`;
+                                      }}
                                       className="flex-grow-1"
                                     >
                                       <FiEdit className="me-1" />
@@ -357,7 +358,11 @@ const Resources = () => {
                                     <Button 
                                       variant="outline-danger" 
                                       size="sm"
-                                      onClick={() => handleDeleteResource(resource._id)}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleDeleteResource(resource._id);
+                                      }}
                                     >
                                       <FiTrash2 />
                                     </Button>
@@ -366,6 +371,7 @@ const Resources = () => {
                               </div>
                             </Card.Body>
                           </Card>
+                          </Link>
                         </Col>
                       ))}
                     </Row>
