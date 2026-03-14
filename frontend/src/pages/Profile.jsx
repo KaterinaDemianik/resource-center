@@ -22,6 +22,9 @@ const Profile = () => {
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showCreateResource, setShowCreateResource] = useState(false)
+  const [showEditResource, setShowEditResource] = useState(false)
+  const [editingResource, setEditingResource] = useState(null)
+  const [resourceToDelete, setResourceToDelete] = useState(null)
   const [newResource, setNewResource] = useState({
     title: '',
     description: '',
@@ -211,6 +214,61 @@ const Profile = () => {
     } catch (error) {
       alert('Помилка створення ресурсу: ' + (error.response?.data?.message || 'Невідома помилка'))
     }
+  }
+
+  const handleEditResource = async (e) => {
+    e.preventDefault()
+    try {
+      const token = localStorage.getItem('token')
+      const tagsArray = editingResource.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+      
+      const response = await axios.put(`/api/resources/${editingResource._id}`, {
+        title: editingResource.title,
+        description: editingResource.description,
+        category: editingResource.category,
+        url: editingResource.url,
+        tags: tagsArray
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.data.success) {
+        setShowEditResource(false)
+        setEditingResource(null)
+        refetchResources()
+        alert('Ресурс успішно оновлено!')
+      }
+    } catch (error) {
+      alert('Помилка оновлення ресурсу: ' + (error.response?.data?.message || 'Невідома помилка'))
+    }
+  }
+
+  const handleDeleteResource = async (resourceId) => {
+    if (!window.confirm('Ви впевнені, що хочете видалити цей ресурс?')) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.delete(`/api/resources/${resourceId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.data.success) {
+        refetchResources()
+        alert('Ресурс успішно видалено!')
+      }
+    } catch (error) {
+      alert('Помилка видалення ресурсу: ' + (error.response?.data?.message || 'Невідома помилка'))
+    }
+  }
+
+  const openEditModal = (resource) => {
+    setEditingResource({
+      ...resource,
+      tags: resource.tags.join(', ')
+    })
+    setShowEditResource(true)
   }
 
   const getCategoryBadgeVariant = (category) => {
@@ -455,11 +513,19 @@ const Profile = () => {
                               </div>
 
                               <div className="d-flex justify-content-end gap-2">
-                                <Button variant="outline-primary" size="sm">
+                                <Button 
+                                  variant="outline-primary" 
+                                  size="sm"
+                                  onClick={() => openEditModal(resource)}
+                                >
                                   <FiEdit className="me-1" />
                                   Редагувати
                                 </Button>
-                                <Button variant="outline-danger" size="sm">
+                                <Button 
+                                  variant="outline-danger" 
+                                  size="sm"
+                                  onClick={() => handleDeleteResource(resource._id)}
+                                >
                                   <FiTrash2 className="me-1" />
                                   Видалити
                                 </Button>
@@ -673,6 +739,89 @@ const Profile = () => {
               </Button>
             </div>
           </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal для редагування ресурсу */}
+      <Modal show={showEditResource} onHide={() => setShowEditResource(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Редагувати ресурс</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {editingResource && (
+            <Form onSubmit={handleEditResource}>
+              <Form.Group className="mb-3">
+                <Form.Label>Назва ресурсу *</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Введіть назву ресурсу"
+                  value={editingResource.title}
+                  onChange={(e) => setEditingResource({...editingResource, title: e.target.value})}
+                  required
+                />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Опис *</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  placeholder="Опишіть ресурс"
+                  value={editingResource.description}
+                  onChange={(e) => setEditingResource({...editingResource, description: e.target.value})}
+                  required
+                />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Категорія *</Form.Label>
+                <Form.Select
+                  value={editingResource.category}
+                  onChange={(e) => setEditingResource({...editingResource, category: e.target.value})}
+                >
+                  <option value="technology">Технології</option>
+                  <option value="education">Освіта</option>
+                  <option value="health">Здоров'я</option>
+                  <option value="business">Бізнес</option>
+                  <option value="entertainment">Розваги</option>
+                  <option value="other">Інше</option>
+                </Form.Select>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>URL (посилання)</Form.Label>
+                <Form.Control
+                  type="url"
+                  placeholder="https://example.com"
+                  value={editingResource.url || ''}
+                  onChange={(e) => setEditingResource({...editingResource, url: e.target.value})}
+                />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Теги (через кому)</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="javascript, react, frontend"
+                  value={editingResource.tags}
+                  onChange={(e) => setEditingResource({...editingResource, tags: e.target.value})}
+                />
+                <Form.Text className="text-muted">
+                  Введіть теги через кому для кращого пошуку
+                </Form.Text>
+              </Form.Group>
+
+              <div className="d-flex justify-content-end gap-2">
+                <Button variant="secondary" onClick={() => setShowEditResource(false)}>
+                  Скасувати
+                </Button>
+                <Button variant="primary" type="submit">
+                  <FiEdit className="me-2" />
+                  Зберегти зміни
+                </Button>
+              </div>
+            </Form>
+          )}
         </Modal.Body>
       </Modal>
     </Container>
