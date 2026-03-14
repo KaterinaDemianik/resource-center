@@ -98,51 +98,6 @@ const AdminDashboard = () => {
                   </Card>
                 </Col>
               </Row>
-
-              {/* Quick Actions */}
-              <Row className="mt-5">
-                <Col>
-                  <Card>
-                    <Card.Header>
-                      <h5 className="mb-0">Швидкі дії</h5>
-                    </Card.Header>
-                    <Card.Body>
-                      <Row className="g-3">
-                        <Col md={4}>
-                          <Button 
-                            variant="outline-primary" 
-                            className="w-100"
-                            onClick={() => navigate('/admin/resources')}
-                          >
-                            <FiBook className="me-2" />
-                            Модерація ресурсів
-                          </Button>
-                        </Col>
-                        <Col md={4}>
-                          <Button 
-                            variant="outline-success" 
-                            className="w-100"
-                            onClick={() => navigate('/admin/users')}
-                          >
-                            <FiUsers className="me-2" />
-                            Управління користувачами
-                          </Button>
-                        </Col>
-                        <Col md={4}>
-                          <Button 
-                            variant="outline-info" 
-                            className="w-100"
-                            disabled
-                          >
-                            <FiBarChart2 className="me-2" />
-                            Детальна аналітика
-                          </Button>
-                        </Col>
-                      </Row>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              </Row>
             </>
           )}
         </Col>
