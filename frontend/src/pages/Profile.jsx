@@ -247,7 +247,7 @@ const Profile = () => {
                 <div className="position-relative" style={{ width: '120px', height: '120px' }}>
                   {avatarPreview || user?.avatar ? (
                     <img
-                      src={avatarPreview || `http://localhost:5001${user.avatar}`}
+                      src={avatarPreview || `${axios.defaults.baseURL || 'http://localhost:5001'}${user.avatar}`}
                       alt="Avatar"
                       style={{
                         width: '120px',
@@ -256,6 +256,10 @@ const Profile = () => {
                         objectFit: 'cover',
                         border: '3px solid #7c3aed',
                         display: 'block'
+                      }}
+                      onError={(e) => {
+                        console.error('Avatar load error:', e.target.src);
+                        e.target.style.display = 'none';
                       }}
                     />
                   ) : (
