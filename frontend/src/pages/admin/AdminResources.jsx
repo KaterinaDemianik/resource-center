@@ -71,6 +71,18 @@ const AdminResources = () => {
     other: 'Інше'
   };
 
+  const getCategoryBadgeVariant = (category) => {
+    const variants = {
+      education: 'primary',
+      technology: 'info',
+      health: 'success',
+      business: 'warning',
+      entertainment: 'danger',
+      other: 'secondary'
+    };
+    return variants[category] || 'secondary';
+  };
+
   return (
     <Container style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
       <div style={{ 
@@ -161,11 +173,7 @@ const AdminResources = () => {
                         </small>
                       </td>
                       <td style={{ padding: '12px' }}>
-                        <Badge style={{ 
-                          backgroundColor: 'rgba(124,58,237,0.2)', 
-                          color: '#a78bfa', 
-                          fontWeight: 400 
-                        }}>
+                        <Badge bg={getCategoryBadgeVariant(resource.category)} style={{ fontWeight: 400 }}>
                           {categoryMap[resource.category] || resource.category}
                         </Badge>
                       </td>
