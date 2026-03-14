@@ -70,7 +70,10 @@ const Profile = () => {
 
   // Fetch user's resources
   const fetchUserResources = async () => {
-    const response = await axios.get('/api/resources/user/my-resources')
+    const token = localStorage.getItem('token')
+    const response = await axios.get('/api/resources/user/my-resources', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     return response.data
   }
 
