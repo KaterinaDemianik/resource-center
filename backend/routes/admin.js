@@ -3,6 +3,7 @@ const { body, validationResult, query } = require('express-validator');
 const Resource = require('../models/Resource');
 const User = require('../models/User');
 const { adminAuth } = require('../middleware/auth');
+const { createNotification } = require('./notifications');
 
 const router = express.Router();
 
@@ -93,6 +94,15 @@ router.patch('/resources/:id/approve', adminAuth, async (req, res) => {
 
     await resource.populate(['author', 'approvedBy']);
 
+    // Створюємо сповіщення для автора ресурсу
+    await createNotification(
+      resource.author._id,
+      'resource_approved',
+      'Ресурс схвалено',
+      `Ваш ресурс "${resource.title}" був схвалений модератором і тепер доступний для всіх користувачів.`,
+      resource._id
+    );
+
     res.json({
       success: true,
       message: 'Resource approved successfully',
@@ -126,6 +136,15 @@ router.patch('/resources/:id/reject', adminAuth, async (req, res) => {
 
     await resource.populate('author');
 
+    // Створюємо сповіщення для автора ресурсу
+    await createNotification(
+      resource.author._id,
+      'resource_rejected',
+      'Ресурс відхилено',
+      `Ваш ресурс "${resource.title}" був відхилений модератором. Будь ласка, перевірте відповідність правилам та спробуйте знову.`,
+      resource._id
+    );
+
     res.json({
       success: true,
       message: 'Resource approval revoked successfully',
@@ -152,10 +171,22 @@ router.patch('/resources/:id/toggle-active', adminAuth, async (req, res) => {
       });
     }
 
+    const wasActive = resource.isActive;
     resource.isActive = !resource.isActive;
     await resource.save();
 
     await resource.populate(['author', 'approvedBy']);
+
+    // Створюємо сповіщення для автора якщо ресурс деактивовано
+    if (wasActive && !resource.isActive) {
+      await createNotification(
+        resource.author._id,
+        'resource_deactivated',
+        'Ресурс деактивовано',
+        `Ваш ресурс "${resource.title}" був деактивований адміністратором.`,
+        resource._id
+      );
+    }
 
     res.json({
       success: true,

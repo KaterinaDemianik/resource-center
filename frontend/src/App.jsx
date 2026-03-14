@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Routes, Route, Link, useNavigate, NavLink } from 'react-router-dom'
 import { Container, Navbar, Nav, Button, Card, Row, Col } from 'react-bootstrap'
 import { Book, Search } from 'react-bootstrap-icons'
-import { FiPlus } from 'react-icons/fi'
+import { FiPlus, FiBell } from 'react-icons/fi'
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import Login from './pages/Login'
@@ -12,6 +12,7 @@ import Resources from './pages/Resources'
 import ResourceDetail from './pages/ResourceDetail'
 import Profile from './pages/Profile'
 import CreateResource from './pages/CreateResource'
+import Notifications from './pages/Notifications'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminResources from './pages/admin/AdminResources'
@@ -194,6 +195,26 @@ function App() {
 
   const user = userData || (token ? JSON.parse(localStorage.getItem('user') || 'null') : null);
 
+  // Запит для підрахунку непрочитаних сповіщень
+  const { data: unreadData } = useQuery({
+    queryKey: ['unreadCount'],
+    queryFn: async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return { count: 0 };
+      
+      try {
+        const response = await axios.get('/api/notifications/unread-count', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+      } catch (error) {
+        return { count: 0 };
+      }
+    },
+    enabled: !!token,
+    refetchInterval: 30000, // Оновлювати кожні 30 секунд
+  });
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -247,6 +268,40 @@ function App() {
                   })}
                 >
                   Додати ресурс
+                </Nav.Link>
+              )}
+              {user && (
+                <Nav.Link 
+                  as={NavLink} 
+                  to="/notifications"
+                  style={({ isActive }) => ({
+                    color: isActive ? '#a78bfa' : '#94a3b8',
+                    fontWeight: isActive ? 600 : 400,
+                    borderBottom: isActive ? '2px solid #7c3aed' : 'none',
+                    paddingBottom: '4px',
+                    position: 'relative'
+                  })}
+                >
+                  <FiBell />
+                  {unreadData?.count > 0 && (
+                    <span 
+                      style={{
+                        position: 'absolute',
+                        top: '-5px',
+                        right: '-5px',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        borderRadius: '50%',
+                        padding: '2px 6px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        minWidth: '18px',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {unreadData.count > 99 ? '99+' : unreadData.count}
+                    </span>
+                  )}
                 </Nav.Link>
               )}
               {user ? (
@@ -309,6 +364,7 @@ function App() {
           <Route path="/resources/:id" element={<ResourceDetail />} />
           <Route path="/create-resource" element={<CreateResource />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
             <Route index element={<AdminDashboard />} />
             <Route path="resources" element={<AdminResources />} />

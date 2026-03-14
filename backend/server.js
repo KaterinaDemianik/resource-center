@@ -47,6 +47,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/resources', require('./routes/resources'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // GraphQL API endpoint
 const graphqlMiddleware = require('./graphql');
