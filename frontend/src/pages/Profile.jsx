@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Container, Row, Col, Card, Button, Form, Tab, Tabs, Badge, Alert } from 'react-bootstrap'
+import { Container, Row, Col, Card, Button, Form, Tab, Tabs, Badge, Alert, Modal } from 'react-bootstrap'
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import { FiUser, FiSettings, FiBook, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi'
@@ -21,6 +21,14 @@ const Profile = () => {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showCreateResource, setShowCreateResource] = useState(false)
+  const [newResource, setNewResource] = useState({
+    title: '',
+    description: '',
+    category: 'technology',
+    url: '',
+    tags: ''
+  })
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -166,6 +174,39 @@ const Profile = () => {
       }
     } catch (error) {
       alert('Помилка видалення акаунту: ' + (error.response?.data?.message || 'Невідома помилка'))
+    }
+  }
+
+  const handleCreateResource = async (e) => {
+    e.preventDefault()
+    try {
+      const token = localStorage.getItem('token')
+      const tagsArray = newResource.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+      
+      const response = await axios.post('/api/resources', {
+        title: newResource.title,
+        description: newResource.description,
+        category: newResource.category,
+        url: newResource.url,
+        tags: tagsArray
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.data.success) {
+        setShowCreateResource(false)
+        setNewResource({
+          title: '',
+          description: '',
+          category: 'technology',
+          url: '',
+          tags: ''
+        })
+        refetchResources()
+        alert('Ресурс успішно створено!')
+      }
+    } catch (error) {
+      alert('Помилка створення ресурсу: ' + (error.response?.data?.message || 'Невідома помилка'))
     }
   }
 
@@ -344,7 +385,7 @@ const Profile = () => {
             <Tab eventKey="resources" title={<><FiBook className="me-2" />Мої ресурси</>}>
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <h5>Мої ресурси</h5>
-                <Button variant="primary">
+                <Button variant="primary" onClick={() => setShowCreateResource(true)}>
                   <FiPlus className="me-2" />
                   Додати ресурс
                 </Button>
@@ -364,7 +405,7 @@ const Profile = () => {
                         <FiBook size={48} className="text-muted mb-3" />
                         <h5>У вас ще немає ресурсів</h5>
                         <p className="text-muted">Додайте свій перший ресурс, щоб поділитися знаннями з іншими</p>
-                        <Button variant="primary">
+                        <Button variant="primary" onClick={() => setShowCreateResource(true)}>
                           <FiPlus className="me-2" />
                           Додати ресурс
                         </Button>
@@ -537,6 +578,87 @@ const Profile = () => {
           </Tabs>
         </Col>
       </Row>
+
+      {/* Modal для створення ресурсу */}
+      <Modal show={showCreateResource} onHide={() => setShowCreateResource(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Додати новий ресурс</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleCreateResource}>
+            <Form.Group className="mb-3">
+              <Form.Label>Назва ресурсу *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Введіть назву ресурсу"
+                value={newResource.title}
+                onChange={(e) => setNewResource({...newResource, title: e.target.value})}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Опис *</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Опишіть ресурс"
+                value={newResource.description}
+                onChange={(e) => setNewResource({...newResource, description: e.target.value})}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Категорія *</Form.Label>
+              <Form.Select
+                value={newResource.category}
+                onChange={(e) => setNewResource({...newResource, category: e.target.value})}
+              >
+                <option value="technology">Технології</option>
+                <option value="education">Освіта</option>
+                <option value="health">Здоров'я</option>
+                <option value="business">Бізнес</option>
+                <option value="entertainment">Розваги</option>
+                <option value="other">Інше</option>
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>URL (посилання)</Form.Label>
+              <Form.Control
+                type="url"
+                placeholder="https://example.com"
+                value={newResource.url}
+                onChange={(e) => setNewResource({...newResource, url: e.target.value})}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Теги (через кому)</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="javascript, react, frontend"
+                value={newResource.tags}
+                onChange={(e) => setNewResource({...newResource, tags: e.target.value})}
+              />
+              <Form.Text className="text-muted">
+                Введіть теги через кому для кращого пошуку
+              </Form.Text>
+            </Form.Group>
+
+            <div className="d-flex justify-content-end gap-2">
+              <Button variant="secondary" onClick={() => setShowCreateResource(false)}>
+                Скасувати
+              </Button>
+              <Button variant="primary" type="submit">
+                <FiPlus className="me-2" />
+                Створити ресурс
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </Container>
   )
 }

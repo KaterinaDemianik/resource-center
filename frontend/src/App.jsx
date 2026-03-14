@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { Routes, Route, Link, useNavigate, NavLink } from 'react-router-dom'
 import { Container, Navbar, Nav, Button, Card, Row, Col } from 'react-bootstrap'
-import { Book, Search, People } from 'react-bootstrap-icons'
+import { Book, Search } from 'react-bootstrap-icons'
+import { FiPlus } from 'react-icons/fi'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import VerifyEmail from './pages/VerifyEmail'
@@ -126,7 +127,13 @@ const Home = () => {
                 transition: 'border-color 0.2s, transform 0.2s',
                 cursor: 'pointer'
               }}
-              onClick={() => navigate('/resources')}
+              onClick={() => {
+                if (user) {
+                  navigate('/profile', { state: { activeTab: 'resources' } });
+                } else {
+                  navigate('/login');
+                }
+              }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = '#7c3aed';
                 e.currentTarget.style.transform = 'translateY(-4px)';
@@ -137,12 +144,12 @@ const Home = () => {
               }}
             >
               <Card.Body style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
-                <People size={32} color="#a78bfa" style={{ marginBottom: '12px' }} />
+                <FiPlus size={32} color="#a78bfa" style={{ marginBottom: '12px' }} />
                 <Card.Title style={{ color: '#e2e8f0', fontSize: '16px', fontWeight: 600, marginBottom: '10px' }}>
-                  Спільнота
+                  Додати ресурс
                 </Card.Title>
                 <Card.Text style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
-                  Приєднуйтесь до спільноти та обмінюйтесь знаннями
+                  Поділіться корисними матеріалами зі спільнотою
                 </Card.Text>
               </Card.Body>
             </Card>
