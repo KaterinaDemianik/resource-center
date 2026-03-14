@@ -338,7 +338,6 @@ const Profile = () => {
           {/* Quick Stats */}
           <Card className="shadow-sm">
             <Card.Body>
-              <h6>Статистика</h6>
               <div className="d-flex justify-content-between mb-2">
                 <span>Статус:</span>
                 <Badge bg={user?.isActive ? 'success' : 'danger'}>

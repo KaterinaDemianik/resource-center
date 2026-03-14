@@ -286,7 +286,8 @@ router.get('/me', auth, async (req, res) => {
         email: user.email,
         role: user.role,
         emailVerified: user.emailVerified,
-        isActive: user.isActive
+        isActive: user.isActive,
+        avatar: user.avatar
       }
     });
 
