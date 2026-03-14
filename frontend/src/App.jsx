@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import { Routes, Route, Link, useNavigate } from 'react-router-dom'
-import { Container, Navbar, Nav, Button } from 'react-bootstrap'
+import { Routes, Route, Link, useNavigate, NavLink } from 'react-router-dom'
+import { Container, Navbar, Nav, Button, Card, Row, Col } from 'react-bootstrap'
+import { Book, Search, People } from 'react-bootstrap-icons'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import VerifyEmail from './pages/VerifyEmail'
 import Resources from './pages/Resources'
 import ResourceDetail from './pages/ResourceDetail'
 import Profile from './pages/Profile'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminResources from './pages/admin/AdminResources'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminRoute from './components/AdminRoute'
 
 // Головна сторінка
 const Home = () => {
@@ -46,38 +52,98 @@ const Home = () => {
           </div>
         )}
 
-        <div className="row mt-5">
-          <div className="col-md-4">
-            <div className="card h-100 shadow-sm">
-              <div className="card-body">
-                <h5 className="card-title">Освітні ресурси</h5>
-                <p className="card-text text-muted">
+        <Row className="mt-5 g-4">
+          <Col md={4}>
+            <Card
+              className="h-100"
+              style={{
+                backgroundColor: '#16213e',
+                border: '1px solid #2d3748',
+                borderRadius: '12px',
+                transition: 'border-color 0.2s, transform 0.2s',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#7c3aed';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#2d3748';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <Card.Body style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                <Book size={32} color="#a78bfa" style={{ marginBottom: '12px' }} />
+                <Card.Title style={{ color: '#e2e8f0', fontSize: '16px', fontWeight: 600, marginBottom: '10px' }}>
+                  Освітні ресурси
+                </Card.Title>
+                <Card.Text style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
                   Знаходьте та діліться корисними матеріалами для навчання
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="card h-100 shadow-sm">
-              <div className="card-body">
-                <h5 className="card-title">Пошук та фільтрація</h5>
-                <p className="card-text text-muted">
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={4}>
+            <Card
+              className="h-100"
+              style={{
+                backgroundColor: '#16213e',
+                border: '1px solid #2d3748',
+                borderRadius: '12px',
+                transition: 'border-color 0.2s, transform 0.2s',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#7c3aed';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#2d3748';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <Card.Body style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                <Search size={32} color="#a78bfa" style={{ marginBottom: '12px' }} />
+                <Card.Title style={{ color: '#e2e8f0', fontSize: '16px', fontWeight: 600, marginBottom: '10px' }}>
+                  Пошук та фільтрація
+                </Card.Title>
+                <Card.Text style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
                   Швидко знаходьте потрібні ресурси за категоріями
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="card h-100 shadow-sm">
-              <div className="card-body">
-                <h5 className="card-title">Спільнота</h5>
-                <p className="card-text text-muted">
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={4}>
+            <Card
+              className="h-100"
+              style={{
+                backgroundColor: '#16213e',
+                border: '1px solid #2d3748',
+                borderRadius: '12px',
+                transition: 'border-color 0.2s, transform 0.2s',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#7c3aed';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#2d3748';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <Card.Body style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                <People size={32} color="#a78bfa" style={{ marginBottom: '12px' }} />
+                <Card.Title style={{ color: '#e2e8f0', fontSize: '16px', fontWeight: 600, marginBottom: '10px' }}>
+                  Спільнота
+                </Card.Title>
+                <Card.Text style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
                   Приєднуйтесь до спільноти та обмінюйтесь знаннями
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
       </div>
     </Container>
   );
@@ -104,19 +170,66 @@ function App() {
 
   return (
     <div className="App d-flex flex-column min-vh-100">
-      <Navbar bg="primary" variant="dark" expand="lg" className="shadow-sm">
+      <Navbar expand="lg" className="shadow-sm">
         <Container>
-          <Navbar.Brand as={Link} to="/" className="fw-bold">
+          <Navbar.Brand as={Link} to="/">
             Ресурсний центр
           </Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-              <Nav.Link as={Link} to="/">Головна</Nav.Link>
-              <Nav.Link as={Link} to="/resources">Ресурси</Nav.Link>
+              <Nav.Link 
+                as={NavLink} 
+                to="/"
+                style={({ isActive }) => ({
+                  color: isActive ? '#a78bfa' : '#94a3b8',
+                  fontWeight: isActive ? 600 : 400,
+                  borderBottom: isActive ? '2px solid #7c3aed' : 'none',
+                  paddingBottom: '4px'
+                })}
+              >
+                Головна
+              </Nav.Link>
+              <Nav.Link 
+                as={NavLink} 
+                to="/resources"
+                style={({ isActive }) => ({
+                  color: isActive ? '#a78bfa' : '#94a3b8',
+                  fontWeight: isActive ? 600 : 400,
+                  borderBottom: isActive ? '2px solid #7c3aed' : 'none',
+                  paddingBottom: '4px'
+                })}
+              >
+                Ресурси
+              </Nav.Link>
               {user ? (
                 <>
-                  <Nav.Link as={Link} to="/profile">Профіль</Nav.Link>
+                  <Nav.Link 
+                    as={NavLink} 
+                    to="/profile"
+                    style={({ isActive }) => ({
+                      color: isActive ? '#a78bfa' : '#94a3b8',
+                      fontWeight: isActive ? 600 : 400,
+                      borderBottom: isActive ? '2px solid #7c3aed' : 'none',
+                      paddingBottom: '4px'
+                    })}
+                  >
+                    Профіль
+                  </Nav.Link>
+                  {user.role === 'admin' && (
+                    <Nav.Link 
+                      as={NavLink} 
+                      to="/admin"
+                      style={({ isActive }) => ({
+                        color: isActive ? '#a78bfa' : '#94a3b8',
+                        fontWeight: isActive ? 600 : 400,
+                        borderBottom: isActive ? '2px solid #7c3aed' : 'none',
+                        paddingBottom: '4px'
+                      })}
+                    >
+                      Адмін панель
+                    </Nav.Link>
+                  )}
                   <span className="navbar-text text-light me-2">
                     {user.firstName} {user.lastName}
                   </span>
@@ -148,13 +261,18 @@ function App() {
           <Route path="/resources" element={<Resources />} />
           <Route path="/resources/:id" element={<ResourceDetail />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="resources" element={<AdminResources />} />
+            <Route path="users" element={<AdminUsers />} />
+          </Route>
         </Routes>
       </main>
       
-      <footer className="bg-light py-4 mt-auto">
+      <footer className="py-4 mt-auto">
         <Container>
-          <div className="text-center text-muted">
-            <p className="mb-0">&copy; 2024 Ресурсний центр. Всі права захищені.</p>
+          <div className="text-center">
+            <p className="mb-0 text-muted">&copy; 2024 Ресурсний центр. Всі права захищені.</p>
           </div>
         </Container>
       </footer>

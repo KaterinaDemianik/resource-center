@@ -84,11 +84,15 @@ const Resources = () => {
   return (
     <>
       {/* Search Section */}
-      <section style={{ backgroundColor: '#007bff', padding: '4rem 0', marginBottom: '2rem', color: 'white' }}>
+      <section style={{ 
+        background: 'linear-gradient(180deg, #1e1535 0%, #16213e 60%, #0d0d1a 100%)',
+        padding: '3rem 0',
+        marginBottom: '2rem'
+      }}>
         <Container>
           <Row className="justify-content-center">
             <Col lg={8}>
-              <h2 className="text-center mb-4" style={{ fontWeight: 600 }}>Знайдіть потрібні ресурси</h2>
+              <h2 className="text-center mb-4">Знайдіть потрібні ресурси</h2>
               <Form onSubmit={handleSearch}>
                 <Row className="g-2">
                   <Col md={8}>
@@ -98,10 +102,26 @@ const Resources = () => {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       size="lg"
+                      style={{
+                        backgroundColor: 'rgba(255,255,255,0.07)',
+                        border: '1px solid #2d3748',
+                        color: '#e2e8f0',
+                        borderRadius: '8px'
+                      }}
                     />
                   </Col>
                   <Col md={4}>
-                    <Button type="submit" variant="light" size="lg" className="w-100">
+                    <Button 
+                      type="submit" 
+                      size="lg" 
+                      className="w-100"
+                      style={{
+                        backgroundColor: '#7c3aed',
+                        borderColor: '#7c3aed',
+                        color: '#ffffff',
+                        fontWeight: 500
+                      }}
+                    >
                       <FiSearch className="me-2" />
                       Пошук
                     </Button>
@@ -167,21 +187,45 @@ const Resources = () => {
                     <Row className="g-4">
                       {data?.data?.resources?.map((resource) => (
                         <Col md={6} xl={4} key={resource._id}>
-                          <Card className="h-100 resource-card card-hover">
+                          <Card 
+                            className="h-100 resource-card card-hover"
+                            style={{
+                              backgroundColor: '#16213e',
+                              border: '1px solid #2d3748',
+                              borderRadius: '12px',
+                              transition: 'border-color 0.2s, transform 0.2s'
+                            }}
+                          >
                             <Card.Body className="d-flex flex-column">
                               <div className="mb-2">
                                 <Badge 
                                   bg={getCategoryBadgeVariant(resource.category)}
                                   className="category-badge"
+                                  style={{
+                                    fontSize: '11px',
+                                    padding: '4px 10px',
+                                    borderRadius: '20px'
+                                  }}
                                 >
                                   {categories.find(c => c.value === resource.category)?.label || resource.category}
                                 </Badge>
                               </div>
                               
-                              <Card.Title className="h6 mb-2">
+                              <Card.Title 
+                                className="mb-2"
+                                style={{
+                                  color: '#e2e8f0',
+                                  fontSize: '15px',
+                                  fontWeight: 600,
+                                  lineHeight: 1.4
+                                }}
+                              >
                                 <Link 
                                   to={`/resources/${resource._id}`}
-                                  className="text-decoration-none text-dark"
+                                  style={{
+                                    textDecoration: 'none',
+                                    color: '#e2e8f0'
+                                  }}
                                 >
                                   {resource.title}
                                 </Link>
@@ -195,21 +239,25 @@ const Resources = () => {
                               </Card.Text>
 
                               {resource.tags && resource.tags.length > 0 && (
-                                <div className="mb-2">
+                                <div className="mb-2" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                   {resource.tags.slice(0, 3).map((tag, index) => (
-                                    <Badge 
-                                      key={index} 
-                                      bg="light" 
-                                      text="dark" 
-                                      className="me-1 mb-1"
+                                    <span
+                                      key={index}
+                                      style={{
+                                        backgroundColor: 'rgba(124,58,237,0.15)',
+                                        color: '#a78bfa',
+                                        fontSize: '11px',
+                                        padding: '2px 8px',
+                                        borderRadius: '4px'
+                                      }}
                                     >
                                       {tag}
-                                    </Badge>
+                                    </span>
                                   ))}
                                   {resource.tags.length > 3 && (
-                                    <Badge bg="light" text="dark">
+                                    <span style={{ color: '#475569', fontSize: '11px' }}>
                                       +{resource.tags.length - 3}
-                                    </Badge>
+                                    </span>
                                   )}
                                 </div>
                               )}

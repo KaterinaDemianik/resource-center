@@ -346,4 +346,27 @@ router.delete('/delete-account', auth, async (req, res) => {
   }
 });
 
+// ТІЛЬКИ ДЛЯ РОЗРОБКИ - видалити після тестування
+router.post('/make-admin', auth, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { role: 'admin', isActive: true, emailVerified: true },
+      { new: true }
+    ).select('-password');
+    
+    res.json({
+      success: true,
+      message: 'Роль адміна встановлена',
+      user
+    });
+  } catch (error) {
+    console.error('Make admin error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
 module.exports = router;

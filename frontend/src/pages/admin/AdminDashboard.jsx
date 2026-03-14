@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { Container, Row, Col, Card, Tab, Tabs, Table, Button, Badge, Alert } from 'react-bootstrap'
 import { Routes, Route, useNavigate } from 'react-router-dom'
-import { useQuery } from 'react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
-import { FiHome, FiUsers, FiBook, FiBarChart3, FiCheck, FiX, FiToggleLeft, FiToggleRight } from 'react-icons/fi'
+import { FiHome, FiUsers, FiBook, FiBarChart2, FiCheck, FiX, FiToggleLeft, FiToggleRight } from 'react-icons/fi'
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview')
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   // Fetch admin statistics
   const fetchStats = async () => {
@@ -15,7 +16,10 @@ const AdminDashboard = () => {
     return response.data
   }
 
-  const { data: statsData, isLoading: statsLoading } = useQuery('adminStats', fetchStats)
+  const { data: statsData, isLoading: statsLoading } = useQuery({
+    queryKey: ['adminStats'],
+    queryFn: fetchStats
+  })
 
   // Fetch resources for admin
   const fetchAdminResources = async () => {
@@ -23,11 +27,11 @@ const AdminDashboard = () => {
     return response.data
   }
 
-  const { data: resourcesData, isLoading: resourcesLoading, refetch: refetchResources } = useQuery(
-    'adminResources', 
-    fetchAdminResources,
-    { enabled: activeTab === 'resources' }
-  )
+  const { data: resourcesData, isLoading: resourcesLoading, refetch: refetchResources } = useQuery({
+    queryKey: ['adminResources'],
+    queryFn: fetchAdminResources,
+    enabled: activeTab === 'resources'
+  })
 
   // Fetch users for admin
   const fetchAdminUsers = async () => {
@@ -35,16 +39,19 @@ const AdminDashboard = () => {
     return response.data
   }
 
-  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useQuery(
-    'adminUsers', 
-    fetchAdminUsers,
-    { enabled: activeTab === 'users' }
-  )
+  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useQuery({
+    queryKey: ['adminUsers'],
+    queryFn: fetchAdminUsers,
+    enabled: activeTab === 'users'
+  })
 
   const handleApproveResource = async (resourceId) => {
     try {
       await axios.patch(`/api/admin/resources/${resourceId}/approve`)
-      refetchResources()
+      // Invalidate queries for AJAX auto-update
+      queryClient.invalidateQueries({ queryKey: ['adminResources'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      queryClient.invalidateQueries({ queryKey: ['resources'] })
     } catch (error) {
       console.error('Error approving resource:', error)
     }
@@ -53,7 +60,10 @@ const AdminDashboard = () => {
   const handleRejectResource = async (resourceId) => {
     try {
       await axios.patch(`/api/admin/resources/${resourceId}/reject`)
-      refetchResources()
+      // Invalidate queries for AJAX auto-update
+      queryClient.invalidateQueries({ queryKey: ['adminResources'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      queryClient.invalidateQueries({ queryKey: ['resources'] })
     } catch (error) {
       console.error('Error rejecting resource:', error)
     }
@@ -62,7 +72,9 @@ const AdminDashboard = () => {
   const handleToggleUserActive = async (userId) => {
     try {
       await axios.patch(`/api/admin/users/${userId}/toggle-active`)
-      refetchUsers()
+      // Invalidate queries for AJAX auto-update
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] })
     } catch (error) {
       console.error('Error toggling user status:', error)
     }
@@ -88,7 +100,7 @@ const AdminDashboard = () => {
         <Col>
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h2>
-              <FiBarChart3 className="me-2" />
+              <FiBarChart2 className="me-2" />
               Адміністративна панель
             </h2>
           </div>
@@ -201,7 +213,7 @@ const AdminDashboard = () => {
                             className="w-100"
                             disabled
                           >
-                            <FiBarChart3 className="me-2" />
+                            <FiBarChart2 className="me-2" />
                             Детальна аналітика
                           </Button>
                         </Col>
