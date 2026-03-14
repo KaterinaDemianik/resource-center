@@ -197,7 +197,7 @@ const AdminResources = () => {
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <Button
                             size="sm"
-                            variant={resource.isActive ? 'outline-warning' : 'outline-success'}
+                            variant={resource.isActive ? 'warning' : 'success'}
                             onClick={() => toggleMutation.mutate(resource._id)}
                             disabled={toggleMutation.isPending}
                           >

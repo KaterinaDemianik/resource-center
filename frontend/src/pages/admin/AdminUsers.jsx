@@ -124,7 +124,7 @@ const AdminUsers = () => {
                     <td style={{ padding: '12px' }}>
                       <Button
                         size="sm"
-                        variant={user.isActive ? 'outline-warning' : 'outline-success'}
+                        variant={user.isActive ? 'warning' : 'success'}
                         onClick={() => toggleMutation.mutate(user._id)}
                         disabled={toggleMutation.isPending}
                       >
