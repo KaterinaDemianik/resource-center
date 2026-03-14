@@ -23,6 +23,9 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Статична папка для завантажених файлів
+app.use('/uploads', express.static('uploads'));
+
 // Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'resource-center-secret',

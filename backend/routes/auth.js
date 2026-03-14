@@ -5,6 +5,42 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const { sendVerificationEmail } = require('../utils/email');
 const { auth } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Налаштування multer для завантаження аватарок
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/avatars';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'avatar-' + req.user.userId + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|gif/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+  
+  if (extname && mimetype) {
+    cb(null, true);
+  } else {
+    cb(new Error('Тільки зображення дозволені (jpeg, jpg, png, gif)'));
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: fileFilter
+});
 
 const router = express.Router();
 
@@ -426,6 +462,51 @@ router.post('/make-admin', auth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error'
+    });
+  }
+});
+
+// Upload avatar
+router.post('/upload-avatar', auth, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Файл не завантажено'
+      });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Користувача не знайдено'
+      });
+    }
+
+    // Видаляємо стару аватарку якщо вона є
+    if (user.avatar) {
+      const oldAvatarPath = path.join(__dirname, '..', user.avatar);
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    // Зберігаємо шлях до нової аватарки
+    user.avatar = `/uploads/avatars/${req.file.filename}`;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Аватарка успішно завантажена',
+      avatar: user.avatar
+    });
+
+  } catch (error) {
+    console.error('Upload avatar error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Помилка завантаження аватарки'
     });
   }
 });

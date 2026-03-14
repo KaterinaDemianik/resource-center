@@ -23,6 +23,9 @@ const Profile = () => {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [avatarFile, setAvatarFile] = useState(null)
+  const [avatarPreview, setAvatarPreview] = useState(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -106,6 +109,51 @@ const Profile = () => {
     })
     setPasswordError('')
     setPasswordSuccess('')
+  }
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Файл занадто великий. Максимальний розмір 5MB')
+        return
+      }
+      setAvatarFile(file)
+      setAvatarPreview(URL.createObjectURL(file))
+    }
+  }
+
+  const handleUploadAvatar = async () => {
+    if (!avatarFile) return
+
+    setUploadingAvatar(true)
+    try {
+      const token = localStorage.getItem('token')
+      const formData = new FormData()
+      formData.append('avatar', avatarFile)
+
+      const response = await axios.post('/api/auth/upload-avatar', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      if (response.data.success) {
+        const updatedUser = { ...user, avatar: response.data.avatar }
+        setUser(updatedUser)
+        localStorage.setItem('user', JSON.stringify(updatedUser))
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+        setAvatarFile(null)
+        setAvatarPreview(null)
+        alert('Аватарка успішно завантажена!')
+      }
+    } catch (error) {
+      console.error('Upload avatar error:', error)
+      alert('Помилка завантаження аватарки')
+    } finally {
+      setUploadingAvatar(false)
+    }
   }
 
   const handleChangePassword = async (e) => {
@@ -195,10 +243,84 @@ const Profile = () => {
           {/* Profile Sidebar */}
           <Card className="shadow-sm mb-4">
             <Card.Body className="text-center">
-              <div className="mb-3">
-                <FiUser size={64} className="text-muted" />
+              <div className="mb-3 position-relative" style={{ display: 'inline-block' }}>
+                {avatarPreview || user?.avatar ? (
+                  <img
+                    src={avatarPreview || `http://localhost:5001${user.avatar}`}
+                    alt="Avatar"
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '3px solid #7c3aed'
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
+                    backgroundColor: '#f1f5f9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '3px solid #cbd5e1'
+                  }}>
+                    <FiUser size={64} className="text-muted" />
+                  </div>
+                )}
+                <label
+                  htmlFor="avatar-upload"
+                  style={{
+                    position: 'absolute',
+                    bottom: '0',
+                    right: '0',
+                    backgroundColor: '#7c3aed',
+                    borderRadius: '50%',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    border: '2px solid white'
+                  }}
+                >
+                  <FiEdit size={16} color="white" />
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  style={{ display: 'none' }}
+                />
               </div>
-              <h5>{user?.firstName} {user?.lastName}</h5>
+              {avatarFile && (
+                <div className="mt-2">
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={handleUploadAvatar}
+                    disabled={uploadingAvatar}
+                  >
+                    {uploadingAvatar ? 'Завантаження...' : 'Зберегти аватарку'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline-secondary"
+                    className="ms-2"
+                    onClick={() => {
+                      setAvatarFile(null)
+                      setAvatarPreview(null)
+                    }}
+                  >
+                    Скасувати
+                  </Button>
+                </div>
+              )}
+              <h5 className="mt-3">{user?.firstName} {user?.lastName}</h5>
               <p className="text-muted">{user?.email}</p>
               <Badge bg={user?.role === 'admin' ? 'danger' : 'primary'}>
                 {user?.role === 'admin' ? 'Адміністратор' : 'Користувач'}
