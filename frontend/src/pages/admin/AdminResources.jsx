@@ -16,11 +16,12 @@ const fetchResources = async ({ page, search, status }) => {
 const AdminResources = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['admin-resources', page, search],
-    queryFn: () => fetchResources({ page, search, status: 'pending' }),
+    queryKey: ['admin-resources', page, search, activeTab],
+    queryFn: () => fetchResources({ page, search, status: activeTab }),
   });
 
   const toggleMutation = useMutation({
@@ -102,6 +103,42 @@ const AdminResources = () => {
           {data?.data?.pagination?.total || 0} всього
         </Badge>
       </div>
+
+      {/* Вкладки фільтрації */}
+      <Nav variant="tabs" className="mb-4" style={{ borderBottom: '2px solid #2d3748' }}>
+        <Nav.Item>
+          <Nav.Link
+            active={activeTab === 'all'}
+            onClick={() => { setActiveTab('all'); setPage(1); }}
+            style={{
+              color: activeTab === 'all' ? '#a78bfa' : '#94a3b8',
+              backgroundColor: activeTab === 'all' ? 'rgba(124,58,237,0.1)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'all' ? '2px solid #a78bfa' : '2px solid transparent',
+              cursor: 'pointer'
+            }}
+          >
+            <FiBook className="me-2" />
+            Усі ресурси
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link
+            active={activeTab === 'pending'}
+            onClick={() => { setActiveTab('pending'); setPage(1); }}
+            style={{
+              color: activeTab === 'pending' ? '#a78bfa' : '#94a3b8',
+              backgroundColor: activeTab === 'pending' ? 'rgba(124,58,237,0.1)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'pending' ? '2px solid #a78bfa' : '2px solid transparent',
+              cursor: 'pointer'
+            }}
+          >
+            <FiClock className="me-2" />
+            Ресурси на модерації
+          </Nav.Link>
+        </Nav.Item>
+      </Nav>
 
       {error && (
         <Alert variant="danger" style={{ marginBottom: '1rem' }}>
