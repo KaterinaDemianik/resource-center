@@ -86,8 +86,7 @@ const AdminLayout = () => {
                     textDecoration: 'none'
                   }}
                 >
-                  <FiBook size={18} />
-                  Ресурси
+                  Ресурси на модерації
                 </Nav.Link>
                 <Nav.Link 
                   as={Link} 
