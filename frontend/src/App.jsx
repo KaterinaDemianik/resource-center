@@ -9,6 +9,7 @@ import VerifyEmail from './pages/VerifyEmail'
 import Resources from './pages/Resources'
 import ResourceDetail from './pages/ResourceDetail'
 import Profile from './pages/Profile'
+import CreateResource from './pages/CreateResource'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminResources from './pages/admin/AdminResources'
@@ -129,7 +130,7 @@ const Home = () => {
               }}
               onClick={() => {
                 if (user) {
-                  navigate('/profile', { state: { activeTab: 'resources' } });
+                  navigate('/create-resource');
                 } else {
                   navigate('/login');
                 }
@@ -213,6 +214,20 @@ function App() {
               >
                 Ресурси
               </Nav.Link>
+              {user && (
+                <Nav.Link 
+                  as={NavLink} 
+                  to="/create-resource"
+                  style={({ isActive }) => ({
+                    color: isActive ? '#a78bfa' : '#94a3b8',
+                    fontWeight: isActive ? 600 : 400,
+                    borderBottom: isActive ? '2px solid #7c3aed' : 'none',
+                    paddingBottom: '4px'
+                  })}
+                >
+                  Додати ресурс
+                </Nav.Link>
+              )}
               {user ? (
                 <>
                   <Nav.Link 
@@ -271,6 +286,7 @@ function App() {
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/resources" element={<Resources />} />
           <Route path="/resources/:id" element={<ResourceDetail />} />
+          <Route path="/create-resource" element={<CreateResource />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
             <Route index element={<AdminDashboard />} />
