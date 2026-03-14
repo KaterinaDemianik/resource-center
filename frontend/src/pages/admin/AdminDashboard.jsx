@@ -12,7 +12,10 @@ const AdminDashboard = () => {
 
   // Fetch admin statistics
   const fetchStats = async () => {
-    const response = await axios.get('/api/admin/stats')
+    const token = localStorage.getItem('token')
+    const response = await axios.get('/api/admin/stats', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     return response.data
   }
 
@@ -23,7 +26,10 @@ const AdminDashboard = () => {
 
   // Fetch resources for admin
   const fetchAdminResources = async () => {
-    const response = await axios.get('/api/admin/resources?status=pending&limit=10')
+    const token = localStorage.getItem('token')
+    const response = await axios.get('/api/admin/resources?status=pending&limit=10', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     return response.data
   }
 
@@ -35,7 +41,10 @@ const AdminDashboard = () => {
 
   // Fetch users for admin
   const fetchAdminUsers = async () => {
-    const response = await axios.get('/api/admin/users?limit=10')
+    const token = localStorage.getItem('token')
+    const response = await axios.get('/api/admin/users?limit=10', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     return response.data
   }
 
@@ -47,7 +56,10 @@ const AdminDashboard = () => {
 
   const handleApproveResource = async (resourceId) => {
     try {
-      await axios.patch(`/api/admin/resources/${resourceId}/approve`)
+      const token = localStorage.getItem('token')
+      await axios.patch(`/api/admin/resources/${resourceId}/approve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       // Invalidate queries for AJAX auto-update
       queryClient.invalidateQueries({ queryKey: ['adminResources'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
@@ -59,7 +71,10 @@ const AdminDashboard = () => {
 
   const handleRejectResource = async (resourceId) => {
     try {
-      await axios.patch(`/api/admin/resources/${resourceId}/reject`)
+      const token = localStorage.getItem('token')
+      await axios.patch(`/api/admin/resources/${resourceId}/reject`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       // Invalidate queries for AJAX auto-update
       queryClient.invalidateQueries({ queryKey: ['adminResources'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
@@ -71,7 +86,10 @@ const AdminDashboard = () => {
 
   const handleToggleUserActive = async (userId) => {
     try {
-      await axios.patch(`/api/admin/users/${userId}/toggle-active`)
+      const token = localStorage.getItem('token')
+      await axios.patch(`/api/admin/users/${userId}/toggle-active`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       // Invalidate queries for AJAX auto-update
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
