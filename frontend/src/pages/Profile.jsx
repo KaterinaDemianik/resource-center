@@ -75,12 +75,23 @@ const Profile = () => {
   const onSubmitProfile = async (e) => {
     e.preventDefault()
     try {
-      const updatedUser = { ...user, ...formData }
-      localStorage.setItem('user', JSON.stringify(updatedUser))
-      setUser(updatedUser)
-      setIsEditing(false)
+      const token = localStorage.getItem('token')
+      const response = await axios.put('/api/auth/profile', {
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.data.success) {
+        const updatedUser = response.data.user
+        setUser(updatedUser)
+        localStorage.setItem('user', JSON.stringify(updatedUser))
+        setIsEditing(false)
+      }
     } catch (error) {
       console.error('Profile update error:', error)
+      alert('Помилка оновлення профілю')
     }
   }
 
