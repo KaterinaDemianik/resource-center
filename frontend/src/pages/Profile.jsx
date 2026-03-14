@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Container, Row, Col, Card, Button, Form, Tab, Tabs, Badge, Alert } from 'react-bootstrap'
 import axios from 'axios'
-import { FiUser, FiSettings } from 'react-icons/fi'
+import { FiUser, FiSettings, FiEdit } from 'react-icons/fi'
 
 const Profile = () => {
   const [user, setUser] = useState(null)
