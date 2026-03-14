@@ -39,11 +39,10 @@ const AdminUsers = () => {
   });
 
   const cardStyle = { 
-    backgroundColor: '#ffffff', 
-    border: '1px solid #e2e8f0', 
+    backgroundColor: '#16213e', 
+    border: '1px solid #2d3748', 
     borderRadius: '12px', 
-    padding: '1.5rem',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    padding: '1.5rem'
   };
 
   return (
@@ -54,10 +53,11 @@ const AdminUsers = () => {
         alignItems: 'center', 
         marginBottom: '1.5rem' 
       }}>
-        <h2 style={{ color: '#1e293b', fontWeight: 600, margin: 0 }}>
+        <h2 style={{ color: '#e2e8f0', fontWeight: 600, margin: 0 }}>
           Управління користувачами
         </h2>
-        <Badge bg="primary" style={{ 
+        <Badge style={{ 
+          backgroundColor: '#7c3aed',
           fontSize: '13px', 
           padding: '6px 12px' 
         }}>
@@ -73,29 +73,34 @@ const AdminUsers = () => {
 
       <div style={cardStyle}>
         {isLoading ? (
-          <p style={{ color: '#64748b', textAlign: 'center', padding: '2rem' }}>
+          <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>
             Завантаження...
           </p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <Table hover responsive style={{ marginBottom: 0 }}>
-              <thead style={{ backgroundColor: '#f8fafc' }}>
-                <tr>
-                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Користувач</th>
-                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Email</th>
-                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Роль</th>
-                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Статус</th>
-                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Дата реєстрації</th>
-                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Дії</th>
+            <Table responsive style={{ color: '#e2e8f0', marginBottom: 0 }}>
+              <thead>
+                <tr style={{ 
+                  backgroundColor: '#0d0d1a', 
+                  color: '#94a3b8', 
+                  fontSize: '13px', 
+                  borderColor: '#2d3748' 
+                }}>
+                  <th style={{ padding: '12px' }}>Користувач</th>
+                  <th style={{ padding: '12px' }}>Email</th>
+                  <th style={{ padding: '12px' }}>Роль</th>
+                  <th style={{ padding: '12px' }}>Статус</th>
+                  <th style={{ padding: '12px' }}>Дата реєстрації</th>
+                  <th style={{ padding: '12px' }}>Дії</th>
                 </tr>
               </thead>
               <tbody>
                 {data?.data?.users?.map(user => (
-                  <tr key={user._id}>
-                    <td style={{ color: '#1e293b', fontWeight: 500, fontSize: '14px', padding: '12px' }}>
+                  <tr key={user._id} style={{ borderColor: '#2d3748', backgroundColor: 'transparent' }}>
+                    <td style={{ color: '#e2e8f0', fontWeight: 500, fontSize: '14px', padding: '12px' }}>
                       {user.firstName} {user.lastName}
                     </td>
-                    <td style={{ color: '#475569', fontSize: '13px', padding: '12px' }}>
+                    <td style={{ color: '#94a3b8', fontSize: '13px', padding: '12px' }}>
                       {user.email}
                       {!user.emailVerified && (
                         <Badge bg="warning" style={{ marginLeft: '8px', fontSize: '11px' }}>
@@ -113,13 +118,13 @@ const AdminUsers = () => {
                         {user.isActive ? 'Активний' : 'Неактивний'}
                       </Badge>
                     </td>
-                    <td style={{ color: '#475569', fontSize: '13px', padding: '12px' }}>
+                    <td style={{ color: '#94a3b8', fontSize: '13px', padding: '12px' }}>
                       {new Date(user.createdAt).toLocaleDateString('uk-UA')}
                     </td>
                     <td style={{ padding: '12px' }}>
                       <Button
                         size="sm"
-                        variant={user.isActive ? 'warning' : 'success'}
+                        variant={user.isActive ? 'outline-warning' : 'outline-success'}
                         onClick={() => toggleMutation.mutate(user._id)}
                         disabled={toggleMutation.isPending}
                       >

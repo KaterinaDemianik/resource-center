@@ -109,6 +109,17 @@ code {
   min-height: calc(100vh - 200px);
 }
 
+/* Темна тема для таблиць в адмін-панелі */
+.table {
+  --bs-table-bg: transparent !important;
+  --bs-table-color: #e2e8f0 !important;
+  --bs-table-border-color: #2d3748 !important;
+}
+
+.table > :not(caption) > * > * {
+  background-color: transparent !important;
+}
+
 @media (max-width: 768px) {
   .hero-section {
     padding: 2rem 0;
