@@ -3,6 +3,8 @@ import { Routes, Route, Link, useNavigate, NavLink } from 'react-router-dom'
 import { Container, Navbar, Nav, Button, Card, Row, Col } from 'react-bootstrap'
 import { Book, Search } from 'react-bootstrap-icons'
 import { FiPlus } from 'react-icons/fi'
+import { useQuery } from '@tanstack/react-query'
+import axios from 'axios'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import VerifyEmail from './pages/VerifyEmail'
@@ -162,20 +164,39 @@ const Home = () => {
 };
 
 function App() {
-  const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  // Використовуємо React Query для автоматичного оновлення даних користувача
+  const { data: userData } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      
+      try {
+        const response = await axios.get('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data.success) {
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+          return response.data.user;
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        return null;
+      }
+    },
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000, // 5 хвилин
+    refetchOnWindowFocus: true, // Оновлювати при фокусі вікна
+  });
+
+  const user = userData || (token ? JSON.parse(localStorage.getItem('user') || 'null') : null);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    setUser(null);
     navigate('/');
     window.location.reload();
   };

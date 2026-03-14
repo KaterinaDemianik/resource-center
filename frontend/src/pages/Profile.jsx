@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Container, Row, Col, Card, Button, Form, Tab, Tabs, Badge, Alert } from 'react-bootstrap'
+import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { FiUser, FiSettings, FiEdit } from 'react-icons/fi'
 
 const Profile = () => {
+  const queryClient = useQueryClient()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('profile')
@@ -80,6 +82,8 @@ const Profile = () => {
         const updatedUser = response.data.user
         setUser(updatedUser)
         localStorage.setItem('user', JSON.stringify(updatedUser))
+        // Інвалідуємо дані користувача для оновлення в навбарі
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] })
         setIsEditing(false)
       }
     } catch (error) {
