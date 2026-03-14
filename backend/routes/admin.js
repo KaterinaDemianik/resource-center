@@ -31,13 +31,13 @@ router.get('/resources', adminAuth, [
     let query = {};
     switch (req.query.status) {
       case 'pending':
-        query = { isApproved: false, isActive: true };
+        query = { isApproved: false };
         break;
       case 'approved':
         query = { isApproved: true, isActive: true };
         break;
       case 'inactive':
-        query = { isActive: false };
+        query = { isActive: false, isApproved: true };
         break;
       default:
         // 'all' or no filter - show everything
@@ -88,6 +88,7 @@ router.patch('/resources/:id/approve', adminAuth, async (req, res) => {
     }
 
     resource.isApproved = true;
+    resource.isActive = true;
     resource.approvedBy = req.user.userId;
     resource.approvedAt = new Date();
     await resource.save();
@@ -130,6 +131,7 @@ router.patch('/resources/:id/reject', adminAuth, async (req, res) => {
     }
 
     resource.isApproved = false;
+    resource.isActive = false;
     resource.approvedBy = null;
     resource.approvedAt = null;
     await resource.save();
@@ -332,8 +334,8 @@ router.get('/stats', adminAuth, async (req, res) => {
       User.countDocuments({ emailVerified: false }),
       Resource.countDocuments(),
       Resource.countDocuments({ isApproved: true, isActive: true }),
-      Resource.countDocuments({ isApproved: false, isActive: true }),
-      Resource.countDocuments({ isActive: false })
+      Resource.countDocuments({ isApproved: false }),
+      Resource.countDocuments({ isActive: false, isApproved: true })
     ]);
 
     // Get recent activity (last 7 days)

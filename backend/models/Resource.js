@@ -41,7 +41,7 @@ const resourceSchema = new mongoose.Schema({
   },
   isActive: {
     type: Boolean,
-    default: true
+    default: false
   },
   isApproved: {
     type: Boolean,
