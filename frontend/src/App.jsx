@@ -17,6 +17,7 @@ import AdminRoute from './components/AdminRoute'
 // Головна сторінка
 const Home = () => {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -63,6 +64,7 @@ const Home = () => {
                 transition: 'border-color 0.2s, transform 0.2s',
                 cursor: 'pointer'
               }}
+              onClick={() => navigate('/resources')}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = '#7c3aed';
                 e.currentTarget.style.transform = 'translateY(-4px)';
@@ -93,6 +95,7 @@ const Home = () => {
                 transition: 'border-color 0.2s, transform 0.2s',
                 cursor: 'pointer'
               }}
+              onClick={() => navigate('/resources')}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = '#7c3aed';
                 e.currentTarget.style.transform = 'translateY(-4px)';
@@ -123,6 +126,7 @@ const Home = () => {
                 transition: 'border-color 0.2s, transform 0.2s',
                 cursor: 'pointer'
               }}
+              onClick={() => navigate('/resources')}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = '#7c3aed';
                 e.currentTarget.style.transform = 'translateY(-4px)';
