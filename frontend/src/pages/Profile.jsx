@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Container, Row, Col, Card, Button, Form, Tab, Tabs, Badge, Alert, Modal } from 'react-bootstrap'
-import { useQuery } from '@tanstack/react-query'
+import { Container, Row, Col, Card, Button, Form, Tab, Tabs, Badge, Alert } from 'react-bootstrap'
 import axios from 'axios'
-import { FiUser, FiSettings, FiBook, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi'
+import { FiUser, FiSettings } from 'react-icons/fi'
 
 const Profile = () => {
   const [user, setUser] = useState(null)
@@ -21,17 +20,6 @@ const Profile = () => {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showCreateResource, setShowCreateResource] = useState(false)
-  const [showEditResource, setShowEditResource] = useState(false)
-  const [editingResource, setEditingResource] = useState(null)
-  const [resourceToDelete, setResourceToDelete] = useState(null)
-  const [newResource, setNewResource] = useState({
-    title: '',
-    description: '',
-    category: 'technology',
-    urls: [''],
-    tags: ''
-  })
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -70,21 +58,6 @@ const Profile = () => {
 
     fetchCurrentUser()
   }, [])
-
-  // Fetch user's resources
-  const fetchUserResources = async () => {
-    const token = localStorage.getItem('token')
-    const response = await axios.get('/api/resources/user/my-resources', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    return response.data
-  }
-
-  const { data: resourcesData, isLoading: resourcesLoading, refetch: refetchResources } = useQuery({
-    queryKey: ['userResources'],
-    queryFn: fetchUserResources,
-    enabled: activeTab === 'resources'
-  })
 
   const onSubmitProfile = async (e) => {
     e.preventDefault()
@@ -183,134 +156,6 @@ const Profile = () => {
     }
   }
 
-  const handleCreateResource = async (e) => {
-    e.preventDefault()
-    try {
-      const token = localStorage.getItem('token')
-      const tagsArray = newResource.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
-      const urlsArray = newResource.urls.filter(url => url.trim() !== '')
-      
-      const response = await axios.post('/api/resources', {
-        title: newResource.title,
-        description: newResource.description,
-        category: newResource.category,
-        url: urlsArray[0] || '',
-        urls: urlsArray,
-        tags: tagsArray
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-
-      if (response.data.success) {
-        setShowCreateResource(false)
-        setNewResource({
-          title: '',
-          description: '',
-          category: 'technology',
-          urls: [''],
-          tags: ''
-        })
-        refetchResources()
-        alert('Ресурс успішно створено!')
-      }
-    } catch (error) {
-      alert('Помилка створення ресурсу: ' + (error.response?.data?.message || 'Невідома помилка'))
-    }
-  }
-
-  const handleEditResource = async (e) => {
-    e.preventDefault()
-    try {
-      const token = localStorage.getItem('token')
-      const tagsArray = editingResource.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
-      const urlsArray = editingResource.urls.filter(url => url.trim() !== '')
-      
-      const response = await axios.put(`/api/resources/${editingResource._id}`, {
-        title: editingResource.title,
-        description: editingResource.description,
-        category: editingResource.category,
-        url: urlsArray[0] || '',
-        urls: urlsArray,
-        tags: tagsArray
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-
-      if (response.data.success) {
-        setShowEditResource(false)
-        setEditingResource(null)
-        refetchResources()
-        alert('Ресурс успішно оновлено!')
-      }
-    } catch (error) {
-      alert('Помилка оновлення ресурсу: ' + (error.response?.data?.message || 'Невідома помилка'))
-    }
-  }
-
-  const handleDeleteResource = async (resourceId) => {
-    if (!window.confirm('Ви впевнені, що хочете видалити цей ресурс?')) {
-      return
-    }
-
-    try {
-      const token = localStorage.getItem('token')
-      const response = await axios.delete(`/api/resources/${resourceId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-
-      if (response.data.success) {
-        refetchResources()
-        alert('Ресурс успішно видалено!')
-      }
-    } catch (error) {
-      alert('Помилка видалення ресурсу: ' + (error.response?.data?.message || 'Невідома помилка'))
-    }
-  }
-
-  const openEditModal = (resource) => {
-    setEditingResource({
-      ...resource,
-      urls: resource.urls && resource.urls.length > 0 ? resource.urls : [resource.url || ''],
-      tags: resource.tags.join(', ')
-    })
-    setShowEditResource(true)
-  }
-
-  const getCategoryBadgeVariant = (category) => {
-    const variants = {
-      education: 'primary',
-      technology: 'info',
-      health: 'success',
-      business: 'warning',
-      entertainment: 'danger',
-      other: 'secondary'
-    }
-    return variants[category] || 'secondary'
-  }
-
-  const categories = {
-    education: 'Освіта',
-    technology: 'Технології',
-    health: 'Здоров\'я',
-    business: 'Бізнес',
-    entertainment: 'Розваги',
-    other: 'Інше'
-  }
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('uk-UA')
-  }
-
-  const getStatusBadge = (resource) => {
-    if (!resource.isActive) {
-      return <Badge bg="secondary">Деактивований</Badge>
-    }
-    if (!resource.isApproved) {
-      return <Badge bg="warning">Очікує модерації</Badge>
-    }
-    return <Badge bg="success">Активний</Badge>
-  }
-
   return (
     <Container className="py-5">
       <Row>
@@ -334,10 +179,6 @@ const Profile = () => {
             <Card.Body>
               <h6>Статистика</h6>
               <div className="d-flex justify-content-between mb-2">
-                <span>Ресурсів:</span>
-                <Badge bg="primary">{resourcesData?.data?.pagination?.total || 0}</Badge>
-              </div>
-              <div className="d-flex justify-content-between mb-2">
                 <span>Статус:</span>
                 <Badge bg={user?.isActive ? 'success' : 'danger'}>
                   {user?.isActive ? 'Активний' : 'Неактивний'}
@@ -360,7 +201,7 @@ const Profile = () => {
             className="mb-4"
           >
             {/* Profile Tab */}
-            <Tab eventKey="profile" title={<><FiUser className="me-2" />Профіль</>}>
+            <Tab eventKey="profile" title={<><FiUser className="me-2" />Інформація профілю</>}>
               <Card className="shadow-sm">
                 <Card.Header className="d-flex justify-content-between align-items-center">
                   <h5 className="mb-0">Інформація профілю</h5>
@@ -445,104 +286,6 @@ const Profile = () => {
                   </Form>
                 </Card.Body>
               </Card>
-            </Tab>
-
-            {/* Resources Tab */}
-            <Tab eventKey="resources" title={<><FiBook className="me-2" />Мої ресурси</>}>
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <h5>Мої ресурси</h5>
-                <Button variant="primary" onClick={() => setShowCreateResource(true)}>
-                  <FiPlus className="me-2" />
-                  Додати ресурс
-                </Button>
-              </div>
-
-              {resourcesLoading ? (
-                <div className="text-center py-5">
-                  <div className="spinner-border" role="status">
-                    <span className="visually-hidden">Завантаження...</span>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {resourcesData?.data?.resources?.length === 0 ? (
-                    <Card className="text-center py-5">
-                      <Card.Body>
-                        <FiBook size={48} className="text-muted mb-3" />
-                        <h5>У вас ще немає ресурсів</h5>
-                        <p className="text-muted">Додайте свій перший ресурс, щоб поділитися знаннями з іншими</p>
-                        <Button variant="primary" onClick={() => setShowCreateResource(true)}>
-                          <FiPlus className="me-2" />
-                          Додати ресурс
-                        </Button>
-                      </Card.Body>
-                    </Card>
-                  ) : (
-                    <Row className="g-3">
-                      {resourcesData?.data?.resources?.map((resource) => (
-                        <Col md={6} key={resource._id}>
-                          <Card className="h-100">
-                            <Card.Body>
-                              <div className="d-flex justify-content-between align-items-start mb-2">
-                                <Badge 
-                                  bg={getCategoryBadgeVariant(resource.category)}
-                                  className="category-badge"
-                                >
-                                  {categories[resource.category] || resource.category}
-                                </Badge>
-                                {getStatusBadge(resource)}
-                              </div>
-                              
-                              <Card.Title className="h6">{resource.title}</Card.Title>
-                              <Card.Text className="text-muted small">
-                                {resource.description.length > 100 
-                                  ? `${resource.description.substring(0, 100)}...`
-                                  : resource.description
-                                }
-                              </Card.Text>
-
-                              <div className="mt-2 mb-2">
-                                <div className="d-flex justify-content-between text-muted small">
-                                  <span>
-                                    <FiUser className="me-1" />
-                                    {resource.author?.firstName} {resource.author?.lastName}
-                                  </span>
-                                  <span>
-                                    <FiBook className="me-1" />
-                                    {resource.views || 0} переглядів
-                                  </span>
-                                </div>
-                                <small className="text-muted">
-                                  {formatDate(resource.createdAt)}
-                                </small>
-                              </div>
-
-                              <div className="d-flex justify-content-end gap-2">
-                                <Button 
-                                  variant="outline-primary" 
-                                  size="sm"
-                                  onClick={() => openEditModal(resource)}
-                                >
-                                  <FiEdit className="me-1" />
-                                  Редагувати
-                                </Button>
-                                <Button 
-                                  variant="outline-danger" 
-                                  size="sm"
-                                  onClick={() => handleDeleteResource(resource._id)}
-                                >
-                                  <FiTrash2 className="me-1" />
-                                  Видалити
-                                </Button>
-                              </div>
-                            </Card.Body>
-                          </Card>
-                        </Col>
-                      ))}
-                    </Row>
-                  )}
-                </>
-              )}
             </Tab>
 
             {/* Settings Tab */}
@@ -665,226 +408,6 @@ const Profile = () => {
           </Tabs>
         </Col>
       </Row>
-
-      {/* Modal для створення ресурсу */}
-      <Modal show={showCreateResource} onHide={() => setShowCreateResource(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Додати новий ресурс</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleCreateResource}>
-            <Form.Group className="mb-3">
-              <Form.Label>Назва ресурсу *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Введіть назву ресурсу"
-                value={newResource.title}
-                onChange={(e) => setNewResource({...newResource, title: e.target.value})}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Опис *</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Опишіть ресурс"
-                value={newResource.description}
-                onChange={(e) => setNewResource({...newResource, description: e.target.value})}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Категорія *</Form.Label>
-              <Form.Select
-                value={newResource.category}
-                onChange={(e) => setNewResource({...newResource, category: e.target.value})}
-              >
-                <option value="technology">Технології</option>
-                <option value="education">Освіта</option>
-                <option value="health">Здоров'я</option>
-                <option value="business">Бізнес</option>
-                <option value="entertainment">Розваги</option>
-                <option value="other">Інше</option>
-              </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Посилання</Form.Label>
-              {newResource.urls.map((url, index) => (
-                <div key={index} className="d-flex gap-2 mb-2">
-                  <Form.Control
-                    type="url"
-                    placeholder="https://example.com"
-                    value={url}
-                    onChange={(e) => {
-                      const newUrls = [...newResource.urls]
-                      newUrls[index] = e.target.value
-                      setNewResource({...newResource, urls: newUrls})
-                    }}
-                  />
-                  {newResource.urls.length > 1 && (
-                    <Button 
-                      variant="outline-danger" 
-                      size="sm"
-                      onClick={() => {
-                        const newUrls = newResource.urls.filter((_, i) => i !== index)
-                        setNewResource({...newResource, urls: newUrls})
-                      }}
-                    >
-                      <FiTrash2 />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <Button 
-                variant="outline-primary" 
-                size="sm"
-                onClick={() => setNewResource({...newResource, urls: [...newResource.urls, '']})}
-              >
-                <FiPlus className="me-1" />
-                Додати посилання
-              </Button>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Теги (через кому)</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="javascript, react, frontend"
-                value={newResource.tags}
-                onChange={(e) => setNewResource({...newResource, tags: e.target.value})}
-              />
-              <Form.Text className="text-muted">
-                Введіть теги через кому для кращого пошуку
-              </Form.Text>
-            </Form.Group>
-
-            <div className="d-flex justify-content-end gap-2">
-              <Button variant="secondary" onClick={() => setShowCreateResource(false)}>
-                Скасувати
-              </Button>
-              <Button variant="primary" type="submit">
-                <FiPlus className="me-2" />
-                Створити ресурс
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
-
-      {/* Modal для редагування ресурсу */}
-      <Modal show={showEditResource} onHide={() => setShowEditResource(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Редагувати ресурс</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {editingResource && (
-            <Form onSubmit={handleEditResource}>
-              <Form.Group className="mb-3">
-                <Form.Label>Назва ресурсу *</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Введіть назву ресурсу"
-                  value={editingResource.title}
-                  onChange={(e) => setEditingResource({...editingResource, title: e.target.value})}
-                  required
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Опис *</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  placeholder="Опишіть ресурс"
-                  value={editingResource.description}
-                  onChange={(e) => setEditingResource({...editingResource, description: e.target.value})}
-                  required
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Категорія *</Form.Label>
-                <Form.Select
-                  value={editingResource.category}
-                  onChange={(e) => setEditingResource({...editingResource, category: e.target.value})}
-                >
-                  <option value="technology">Технології</option>
-                  <option value="education">Освіта</option>
-                  <option value="health">Здоров'я</option>
-                  <option value="business">Бізнес</option>
-                  <option value="entertainment">Розваги</option>
-                  <option value="other">Інше</option>
-                </Form.Select>
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Посилання</Form.Label>
-                {editingResource.urls.map((url, index) => (
-                  <div key={index} className="d-flex gap-2 mb-2">
-                    <Form.Control
-                      type="url"
-                      placeholder="https://example.com"
-                      value={url}
-                      onChange={(e) => {
-                        const newUrls = [...editingResource.urls]
-                        newUrls[index] = e.target.value
-                        setEditingResource({...editingResource, urls: newUrls})
-                      }}
-                    />
-                    {editingResource.urls.length > 1 && (
-                      <Button 
-                        variant="outline-danger" 
-                        size="sm"
-                        onClick={() => {
-                          const newUrls = editingResource.urls.filter((_, i) => i !== index)
-                          setEditingResource({...editingResource, urls: newUrls})
-                        }}
-                      >
-                        <FiTrash2 />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button 
-                  variant="outline-primary" 
-                  size="sm"
-                  onClick={() => setEditingResource({...editingResource, urls: [...editingResource.urls, '']})}
-                >
-                  <FiPlus className="me-1" />
-                  Додати посилання
-                </Button>
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Теги (через кому)</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="javascript, react, frontend"
-                  value={editingResource.tags}
-                  onChange={(e) => setEditingResource({...editingResource, tags: e.target.value})}
-                />
-                <Form.Text className="text-muted">
-                  Введіть теги через кому для кращого пошуку
-                </Form.Text>
-              </Form.Group>
-
-              <div className="d-flex justify-content-end gap-2">
-                <Button variant="secondary" onClick={() => setShowEditResource(false)}>
-                  Скасувати
-                </Button>
-                <Button variant="primary" type="submit">
-                  <FiEdit className="me-2" />
-                  Зберегти зміни
-                </Button>
-              </div>
-            </Form>
-          )}
-        </Modal.Body>
-      </Modal>
     </Container>
   )
 }

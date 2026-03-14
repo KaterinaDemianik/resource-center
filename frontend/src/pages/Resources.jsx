@@ -1,15 +1,16 @@
 import React, { useState } from 'react'
-import { Container, Row, Col, Card, Form, Button, Badge, Spinner, Alert } from 'react-bootstrap'
+import { Container, Row, Col, Card, Form, Button, Badge, Spinner, Alert, Tabs, Tab } from 'react-bootstrap'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
-import { FiSearch, FiFilter, FiEye, FiCalendar, FiUser } from 'react-icons/fi'
+import { FiSearch, FiFilter, FiEye, FiCalendar, FiUser, FiEdit, FiTrash2 } from 'react-icons/fi'
 import './Resources.css'
 
 const Resources = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [activeTab, setActiveTab] = useState('all')
 
   const categories = [
     { value: '', label: 'Всі категорії' },
@@ -34,10 +35,24 @@ const Resources = () => {
     return response.data
   }
 
+  const fetchMyResources = async () => {
+    const token = localStorage.getItem('token')
+    const params = new URLSearchParams({
+      page: currentPage.toString(),
+      limit: '12'
+    })
+    
+    const response = await axios.get(`/api/resources/user/my-resources?${params}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  }
+
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['resources', currentPage, selectedCategory, searchTerm],
-    queryFn: fetchResources,
+    queryKey: ['resources', currentPage, selectedCategory, searchTerm, activeTab],
+    queryFn: activeTab === 'my' ? fetchMyResources : fetchResources,
     staleTime: 5 * 60 * 1000,
+    enabled: activeTab === 'all' || (activeTab === 'my' && !!localStorage.getItem('token'))
   })
 
   const handleSearch = (e) => {
@@ -49,6 +64,26 @@ const Resources = () => {
   const handleCategoryChange = (category) => {
     setSelectedCategory(category)
     setCurrentPage(1)
+  }
+
+  const handleDeleteResource = async (resourceId) => {
+    if (!window.confirm('Ви впевнені, що хочете видалити цей ресурс?')) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.delete(`/api/resources/${resourceId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.data.success) {
+        refetch()
+        alert('Ресурс успішно видалено!')
+      }
+    } catch (error) {
+      alert('Помилка видалення ресурсу: ' + (error.response?.data?.message || 'Невідома помилка'))
+    }
   }
 
   const getCategoryBadgeVariant = (category) => {
@@ -133,7 +168,31 @@ const Resources = () => {
         </Container>
       </section>
 
-      <Container className="py-5">
+      <Container className="py-4">
+        <Tabs
+          activeKey={activeTab}
+          onSelect={(k) => {
+            setActiveTab(k)
+            setCurrentPage(1)
+          }}
+          className="mb-4"
+          style={{ borderBottom: '2px solid #2d3748' }}
+        >
+          <Tab 
+            eventKey="all" 
+            title="Усі ресурси"
+            tabClassName="text-light"
+          />
+          <Tab 
+            eventKey="my" 
+            title="Мої ресурси"
+            tabClassName="text-light"
+            disabled={!localStorage.getItem('token')}
+          />
+        </Tabs>
+      </Container>
+
+      <Container className="py-3">
         <Row>
           {/* Sidebar */}
           <Col lg={3}>
@@ -277,6 +336,27 @@ const Resources = () => {
                                   <FiCalendar className="me-1" />
                                   {formatDate(resource.createdAt)}
                                 </div>
+                                
+                                {activeTab === 'my' && (
+                                  <div className="d-flex gap-2 mt-3">
+                                    <Button 
+                                      variant="outline-primary" 
+                                      size="sm"
+                                      onClick={() => window.location.href = `/resources/${resource._id}`}
+                                      className="flex-grow-1"
+                                    >
+                                      <FiEdit className="me-1" />
+                                      Редагувати
+                                    </Button>
+                                    <Button 
+                                      variant="outline-danger" 
+                                      size="sm"
+                                      onClick={() => handleDeleteResource(resource._id)}
+                                    >
+                                      <FiTrash2 />
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </Card.Body>
                           </Card>
