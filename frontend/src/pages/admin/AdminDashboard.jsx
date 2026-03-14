@@ -23,15 +23,13 @@ const AdminDashboard = () => {
   })
 
   return (
-    <Container fluid className="py-4">
+    <Container fluid style={{ paddingTop: '2.5rem', paddingBottom: '2rem' }}>
       <Row>
         <Col>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2>
-              <FiBarChart2 className="me-2" />
-              Адміністративна панель
-            </h2>
-          </div>
+          <h2 style={{ marginBottom: '1.5rem' }}>
+            <FiBarChart2 className="me-2" />
+            Адміністративна панель
+          </h2>
 
           {statsLoading ? (
             <div className="text-center py-5">

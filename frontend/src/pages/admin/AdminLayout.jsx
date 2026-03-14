@@ -45,7 +45,8 @@ const AdminLayout = () => {
               minWidth: '200px',
               width: '200px',
               backgroundColor: '#16213e',
-              borderRadius: '12px'
+              borderRadius: '12px',
+              marginTop: '2.5rem'
             }}
           >
             <Card.Body style={{ padding: '1.5rem 1rem' }}>
