@@ -243,59 +243,62 @@ const Profile = () => {
           {/* Profile Sidebar */}
           <Card className="shadow-sm mb-4">
             <Card.Body className="text-center">
-              <div className="mb-3 position-relative" style={{ display: 'inline-block' }}>
-                {avatarPreview || user?.avatar ? (
-                  <img
-                    src={avatarPreview || `http://localhost:5001${user.avatar}`}
-                    alt="Avatar"
-                    style={{
+              <div className="mb-3 d-flex justify-content-center">
+                <div className="position-relative" style={{ width: '120px', height: '120px' }}>
+                  {avatarPreview || user?.avatar ? (
+                    <img
+                      src={avatarPreview || `http://localhost:5001${user.avatar}`}
+                      alt="Avatar"
+                      style={{
+                        width: '120px',
+                        height: '120px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '3px solid #7c3aed',
+                        display: 'block'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
                       width: '120px',
                       height: '120px',
                       borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '3px solid #7c3aed'
+                      backgroundColor: '#f1f5f9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '3px solid #cbd5e1'
+                    }}>
+                      <FiUser size={64} className="text-muted" />
+                    </div>
+                  )}
+                  <label
+                    htmlFor="avatar-upload"
+                    style={{
+                      position: 'absolute',
+                      bottom: '0',
+                      right: '0',
+                      backgroundColor: '#7c3aed',
+                      borderRadius: '50%',
+                      width: '36px',
+                      height: '36px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      border: '2px solid white'
                     }}
+                  >
+                    <FiEdit size={16} color="white" />
+                  </label>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    style={{ display: 'none' }}
                   />
-                ) : (
-                  <div style={{
-                    width: '120px',
-                    height: '120px',
-                    borderRadius: '50%',
-                    backgroundColor: '#f1f5f9',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '3px solid #cbd5e1'
-                  }}>
-                    <FiUser size={64} className="text-muted" />
-                  </div>
-                )}
-                <label
-                  htmlFor="avatar-upload"
-                  style={{
-                    position: 'absolute',
-                    bottom: '0',
-                    right: '0',
-                    backgroundColor: '#7c3aed',
-                    borderRadius: '50%',
-                    width: '36px',
-                    height: '36px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    border: '2px solid white'
-                  }}
-                >
-                  <FiEdit size={16} color="white" />
-                </label>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  style={{ display: 'none' }}
-                />
+                </div>
               </div>
               {avatarFile && (
                 <div className="mt-2">
