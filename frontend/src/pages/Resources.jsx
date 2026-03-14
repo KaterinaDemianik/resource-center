@@ -267,7 +267,7 @@ const Resources = () => {
                               }}
                             >
                               <Card.Body className="d-flex flex-column">
-                                <div className="mb-2">
+                                <div className="mb-2 d-flex gap-2 flex-wrap">
                                   <Badge 
                                     bg={getCategoryBadgeVariant(resource.category)}
                                     className="category-badge"
@@ -279,6 +279,30 @@ const Resources = () => {
                                   >
                                     {categories.find(c => c.value === resource.category)?.label || resource.category}
                                   </Badge>
+                                  {activeTab === 'my' && !resource.isApproved && (
+                                    <Badge 
+                                      bg="warning"
+                                      style={{
+                                        fontSize: '11px',
+                                        padding: '4px 10px',
+                                        borderRadius: '20px'
+                                      }}
+                                    >
+                                      На модерації
+                                    </Badge>
+                                  )}
+                                  {activeTab === 'my' && resource.isApproved && (
+                                    <Badge 
+                                      bg="success"
+                                      style={{
+                                        fontSize: '11px',
+                                        padding: '4px 10px',
+                                        borderRadius: '20px'
+                                      }}
+                                    >
+                                      Схвалено
+                                    </Badge>
+                                  )}
                                 </div>
                                 
                                 <Card.Title 
