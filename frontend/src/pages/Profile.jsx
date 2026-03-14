@@ -5,6 +5,7 @@ import { FiUser, FiSettings } from 'react-icons/fi'
 
 const Profile = () => {
   const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('profile')
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
@@ -25,7 +26,10 @@ const Profile = () => {
     const fetchCurrentUser = async () => {
       try {
         const token = localStorage.getItem('token')
-        if (!token) return
+        if (!token) {
+          setLoading(false)
+          return
+        }
 
         const response = await axios.get('/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` }
@@ -53,6 +57,8 @@ const Profile = () => {
             email: userData.email || ''
           })
         }
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -154,6 +160,28 @@ const Profile = () => {
     } catch (error) {
       alert('Помилка видалення акаунту: ' + (error.response?.data?.message || 'Невідома помилка'))
     }
+  }
+
+  if (loading) {
+    return (
+      <Container className="py-5">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Завантаження...</span>
+          </div>
+        </div>
+      </Container>
+    )
+  }
+
+  if (!user) {
+    return (
+      <Container className="py-5">
+        <Alert variant="warning">
+          Будь ласка, увійдіть в систему для перегляду профілю
+        </Alert>
+      </Container>
+    )
   }
 
   return (
