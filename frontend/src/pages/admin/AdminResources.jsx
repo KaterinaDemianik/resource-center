@@ -56,10 +56,11 @@ const AdminResources = () => {
   });
 
   const cardStyle = { 
-    backgroundColor: '#16213e', 
-    border: '1px solid #2d3748', 
+    backgroundColor: '#ffffff', 
+    border: '1px solid #e2e8f0', 
     borderRadius: '12px', 
-    padding: '1.5rem' 
+    padding: '1.5rem',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   };
 
   return (
@@ -70,11 +71,10 @@ const AdminResources = () => {
         alignItems: 'center', 
         marginBottom: '1.5rem' 
       }}>
-        <h2 style={{ color: '#e2e8f0', fontWeight: 600, margin: 0 }}>
+        <h2 style={{ color: '#1e293b', fontWeight: 600, margin: 0 }}>
           Управління ресурсами
         </h2>
-        <Badge style={{ 
-          backgroundColor: '#7c3aed', 
+        <Badge bg="primary" style={{ 
           fontSize: '13px', 
           padding: '6px 12px' 
         }}>
@@ -89,12 +89,12 @@ const AdminResources = () => {
       )}
 
       <div style={cardStyle}>
-        <InputGroup style={{ marginBottom: '1rem' }}>
+        <InputGroup style={{ marginBottom: '1.5rem' }}>
           <InputGroup.Text style={{ 
-            backgroundColor: 'rgba(255,255,255,0.05)', 
-            border: '1px solid #2d3748', 
+            backgroundColor: '#f8fafc', 
+            border: '1px solid #cbd5e1', 
             borderRight: 'none',
-            color: '#94a3b8' 
+            color: '#64748b' 
           }}>
             <FiSearch />
           </InputGroup.Text>
@@ -103,62 +103,54 @@ const AdminResources = () => {
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ 
-              backgroundColor: 'rgba(255,255,255,0.05)', 
-              border: '1px solid #2d3748', 
-              color: '#e2e8f0' 
+              backgroundColor: '#ffffff', 
+              border: '1px solid #cbd5e1', 
+              color: '#1e293b' 
             }}
           />
         </InputGroup>
 
         {isLoading ? (
-          <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>
+          <p style={{ color: '#64748b', textAlign: 'center', padding: '2rem' }}>
             Завантаження...
           </p>
         ) : (
           <>
             <div style={{ overflowX: 'auto' }}>
-              <Table responsive style={{ color: '#e2e8f0', marginBottom: 0 }}>
-                <thead>
-                  <tr style={{ 
-                    borderColor: '#2d3748', 
-                    color: '#94a3b8', 
-                    fontSize: '13px' 
-                  }}>
-                    <th>Назва</th>
-                    <th>Категорія</th>
-                    <th>Автор</th>
-                    <th>Схвалено</th>
-                    <th>Статус</th>
-                    <th>Дата</th>
-                    <th>Дії</th>
+              <Table hover responsive style={{ marginBottom: 0 }}>
+                <thead style={{ backgroundColor: '#f8fafc' }}>
+                  <tr>
+                    <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Назва</th>
+                    <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Категорія</th>
+                    <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Автор</th>
+                    <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Схвалено</th>
+                    <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Статус</th>
+                    <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Дата</th>
+                    <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Дії</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data?.data?.resources?.map(resource => (
-                    <tr key={resource._id} style={{ borderColor: '#2d3748' }}>
-                      <td style={{ maxWidth: '200px' }}>
-                        <span style={{ 
-                          color: '#e2e8f0', 
+                    <tr key={resource._id}>
+                      <td style={{ maxWidth: '250px', padding: '12px' }}>
+                        <div style={{ 
+                          color: '#1e293b', 
                           fontWeight: 500, 
-                          fontSize: '14px' 
+                          fontSize: '14px',
+                          marginBottom: '4px'
                         }}>
                           {resource.title}
-                        </span>
-                        <br />
+                        </div>
                         <small style={{ color: '#64748b', fontSize: '12px' }}>
-                          {resource.description?.substring(0, 50)}...
+                          {resource.description?.substring(0, 60)}...
                         </small>
                       </td>
-                      <td>
-                        <Badge style={{ 
-                          backgroundColor: 'rgba(124,58,237,0.2)', 
-                          color: '#a78bfa', 
-                          fontWeight: 400 
-                        }}>
+                      <td style={{ padding: '12px' }}>
+                        <Badge bg="primary" style={{ fontWeight: 400 }}>
                           {resource.category}
                         </Badge>
                       </td>
-                      <td style={{ color: '#94a3b8', fontSize: '13px' }}>
+                      <td style={{ color: '#475569', fontSize: '13px', padding: '12px' }}>
                         {resource.author?.firstName} {resource.author?.lastName}
                       </td>
                       <td>
@@ -171,30 +163,28 @@ const AdminResources = () => {
                           {resource.isActive ? 'Активний' : 'Неактивний'}
                         </Badge>
                       </td>
-                      <td style={{ color: '#475569', fontSize: '12px' }}>
+                      <td style={{ color: '#475569', fontSize: '13px', padding: '12px' }}>
                         {new Date(resource.createdAt).toLocaleDateString('uk-UA')}
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '6px' }}>
+                      <td style={{ padding: '12px' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
                           <Button
                             size="sm"
-                            variant={resource.isActive ? 'outline-warning' : 'outline-success'}
+                            variant={resource.isActive ? 'warning' : 'success'}
                             onClick={() => toggleMutation.mutate(resource._id)}
                             disabled={toggleMutation.isPending}
-                            style={{ fontSize: '12px' }}
                           >
                             {resource.isActive ? <FiToggleRight /> : <FiToggleLeft />}
                           </Button>
                           <Button
                             size="sm"
-                            variant="outline-danger"
+                            variant="danger"
                             onClick={() => {
                               if (window.confirm('Видалити ресурс назавжди?')) {
                                 deleteMutation.mutate(resource._id);
                               }
                             }}
                             disabled={deleteMutation.isPending}
-                            style={{ fontSize: '12px' }}
                           >
                             <FiTrash2 />
                           </Button>

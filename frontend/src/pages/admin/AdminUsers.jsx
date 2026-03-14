@@ -39,10 +39,11 @@ const AdminUsers = () => {
   });
 
   const cardStyle = { 
-    backgroundColor: '#16213e', 
-    border: '1px solid #2d3748', 
+    backgroundColor: '#ffffff', 
+    border: '1px solid #e2e8f0', 
     borderRadius: '12px', 
-    padding: '1.5rem' 
+    padding: '1.5rem',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   };
 
   return (
@@ -53,11 +54,10 @@ const AdminUsers = () => {
         alignItems: 'center', 
         marginBottom: '1.5rem' 
       }}>
-        <h2 style={{ color: '#e2e8f0', fontWeight: 600, margin: 0 }}>
+        <h2 style={{ color: '#1e293b', fontWeight: 600, margin: 0 }}>
           Управління користувачами
         </h2>
-        <Badge style={{ 
-          backgroundColor: '#7c3aed', 
+        <Badge bg="primary" style={{ 
           fontSize: '13px', 
           padding: '6px 12px' 
         }}>
@@ -73,35 +73,35 @@ const AdminUsers = () => {
 
       <div style={cardStyle}>
         {isLoading ? (
-          <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>
+          <p style={{ color: '#64748b', textAlign: 'center', padding: '2rem' }}>
             Завантаження...
           </p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <Table responsive style={{ color: '#e2e8f0', marginBottom: 0 }}>
-              <thead>
-                <tr style={{ 
-                  borderColor: '#2d3748', 
-                  color: '#94a3b8', 
-                  fontSize: '13px' 
-                }}>
-                  <th>Ім'я</th>
-                  <th>Email</th>
-                  <th>Роль</th>
-                  <th>Email підтверджено</th>
-                  <th>Статус</th>
-                  <th>Дата реєстрації</th>
-                  <th>Дія</th>
+            <Table hover responsive style={{ marginBottom: 0 }}>
+              <thead style={{ backgroundColor: '#f8fafc' }}>
+                <tr>
+                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Користувач</th>
+                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Email</th>
+                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Роль</th>
+                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Статус</th>
+                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Дата реєстрації</th>
+                  <th style={{ color: '#475569', fontSize: '13px', fontWeight: 600, padding: '12px' }}>Дії</th>
                 </tr>
               </thead>
               <tbody>
                 {data?.data?.users?.map(user => (
-                  <tr key={user._id} style={{ borderColor: '#2d3748' }}>
-                    <td style={{ color: '#e2e8f0', fontWeight: 500, fontSize: '14px' }}>
+                  <tr key={user._id}>
+                    <td style={{ color: '#1e293b', fontWeight: 500, fontSize: '14px', padding: '12px' }}>
                       {user.firstName} {user.lastName}
                     </td>
-                    <td style={{ color: '#94a3b8', fontSize: '13px' }}>
+                    <td style={{ color: '#475569', fontSize: '13px', padding: '12px' }}>
                       {user.email}
+                      {!user.emailVerified && (
+                        <Badge bg="warning" style={{ marginLeft: '8px', fontSize: '11px' }}>
+                          Не підтверджено
+                        </Badge>
+                      )}
                     </td>
                     <td>
                       <Badge bg={user.role === 'admin' ? 'danger' : 'primary'}>
@@ -109,25 +109,19 @@ const AdminUsers = () => {
                       </Badge>
                     </td>
                     <td>
-                      <Badge bg={user.emailVerified ? 'success' : 'warning'}>
-                        {user.emailVerified ? 'Так' : 'Ні'}
-                      </Badge>
-                    </td>
-                    <td>
                       <Badge bg={user.isActive ? 'success' : 'danger'}>
                         {user.isActive ? 'Активний' : 'Неактивний'}
                       </Badge>
                     </td>
-                    <td style={{ color: '#475569', fontSize: '12px' }}>
+                    <td style={{ color: '#475569', fontSize: '13px', padding: '12px' }}>
                       {new Date(user.createdAt).toLocaleDateString('uk-UA')}
                     </td>
-                    <td>
+                    <td style={{ padding: '12px' }}>
                       <Button
                         size="sm"
-                        variant={user.isActive ? 'outline-warning' : 'outline-success'}
+                        variant={user.isActive ? 'warning' : 'success'}
                         onClick={() => toggleMutation.mutate(user._id)}
                         disabled={toggleMutation.isPending}
-                        style={{ fontSize: '12px' }}
                       >
                         {user.isActive ? <FiToggleRight /> : <FiToggleLeft />}
                       </Button>
