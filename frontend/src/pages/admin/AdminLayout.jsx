@@ -34,8 +34,8 @@ const AdminLayout = () => {
       display: 'flex',
       gap: '1.5rem',
       padding: '2rem',
-      minHeight: 'calc(100vh - 70px)',
-      alignItems: 'flex-start'
+      minHeight: 'calc(100vh - 130px)',
+      alignItems: 'stretch'
     }}>
       {/* Sidebar */}
       <div style={{
@@ -44,7 +44,8 @@ const AdminLayout = () => {
         backgroundColor: '#16213e',
         border: '1px solid #2d3748',
         borderRadius: '12px',
-        padding: '1.5rem 1rem'
+        padding: '1.5rem 1rem',
+        alignSelf: 'stretch'
       }}>
         <h5 style={{ whiteSpace: 'nowrap', color: '#e2e8f0', marginBottom: '1.5rem' }}>
           Адмін панель
