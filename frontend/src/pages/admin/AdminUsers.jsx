@@ -30,8 +30,10 @@ const AdminUsers = () => {
       });
     },
     onSuccess: () => {
+      // Інвалідуємо всі пов'язані запити для автоматичного оновлення
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+      queryClient.invalidateQueries({ queryKey: ['resources'] }); // Оновити ресурси (автор може бути деактивований)
     },
   });
 

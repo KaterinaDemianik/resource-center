@@ -31,8 +31,11 @@ const AdminResources = () => {
       });
     },
     onSuccess: () => {
+      // Інвалідуємо всі пов'язані запити для автоматичного оновлення
       queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
       queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+      queryClient.invalidateQueries({ queryKey: ['resources'] }); // Оновити публічний список ресурсів
+      queryClient.invalidateQueries({ queryKey: ['userResources'] }); // Оновити ресурси користувача
     },
   });
 
@@ -44,8 +47,11 @@ const AdminResources = () => {
       });
     },
     onSuccess: () => {
+      // Інвалідуємо всі пов'язані запити для автоматичного оновлення
       queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
       queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+      queryClient.invalidateQueries({ queryKey: ['resources'] }); // Оновити публічний список ресурсів
+      queryClient.invalidateQueries({ queryKey: ['userResources'] }); // Оновити ресурси користувача
     },
   });
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Container, Row, Col, Card, Form, Button, Badge, Spinner, Alert, Tabs, Tab } from 'react-bootstrap'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { FiSearch, FiFilter, FiEye, FiCalendar, FiUser, FiEdit, FiTrash2 } from 'react-icons/fi'
@@ -11,6 +11,7 @@ const Resources = () => {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [activeTab, setActiveTab] = useState('all')
+  const queryClient = useQueryClient()
 
   const categories = [
     { value: '', label: 'Всі категорії' },
@@ -66,23 +67,28 @@ const Resources = () => {
     setCurrentPage(1)
   }
 
-  const handleDeleteResource = async (resourceId) => {
-    if (!window.confirm('Ви впевнені, що хочете видалити цей ресурс?')) {
-      return
-    }
-
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async (resourceId) => {
       const token = localStorage.getItem('token')
-      const response = await axios.delete(`/api/resources/${resourceId}`, {
+      return axios.delete(`/api/resources/${resourceId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
-
-      if (response.data.success) {
-        refetch()
-        alert('Ресурс успішно видалено!')
-      }
-    } catch (error) {
+    },
+    onSuccess: () => {
+      // Автоматично оновлюємо всі пов'язані запити
+      queryClient.invalidateQueries({ queryKey: ['resources'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-resources'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      alert('Ресурс успішно видалено!')
+    },
+    onError: (error) => {
       alert('Помилка видалення ресурсу: ' + (error.response?.data?.message || 'Невідома помилка'))
+    }
+  })
+
+  const handleDeleteResource = (resourceId) => {
+    if (window.confirm('Ви впевнені, що хочете видалити цей ресурс?')) {
+      deleteMutation.mutate(resourceId)
     }
   }
 

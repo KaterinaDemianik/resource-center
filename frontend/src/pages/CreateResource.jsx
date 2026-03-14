@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { Container, Card, Form, Button, Alert } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { FiPlus, FiTrash2 } from 'react-icons/fi'
 
 const CreateResource = () => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [resource, setResource] = useState({
     title: '',
     description: '',
@@ -14,43 +16,51 @@ const CreateResource = () => {
     tags: ''
   })
   const [error, setError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const createMutation = useMutation({
+    mutationFn: async (resourceData) => {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('Необхідна авторизація')
+      }
+
+      return axios.post('/api/resources', resourceData, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    },
+    onSuccess: () => {
+      // Автоматично оновлюємо всі пов'язані запити
+      queryClient.invalidateQueries({ queryKey: ['resources'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-resources'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      
+      alert('Ресурс успішно створено!')
+      navigate('/resources', { state: { activeTab: 'my' } })
+    },
+    onError: (error) => {
+      if (error.message === 'Необхідна авторизація') {
+        navigate('/login')
+      } else {
+        setError(error.response?.data?.message || 'Помилка створення ресурсу')
+      }
+    }
+  })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setIsSubmitting(true)
 
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        navigate('/login')
-        return
-      }
-
-      const tagsArray = resource.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
-      const urlsArray = resource.urls.filter(url => url.trim() !== '')
-      
-      const response = await axios.post('/api/resources', {
-        title: resource.title,
-        description: resource.description,
-        category: resource.category,
-        url: urlsArray[0] || '',
-        urls: urlsArray,
-        tags: tagsArray
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-
-      if (response.data.success) {
-        alert('Ресурс успішно створено!')
-        navigate('/profile', { state: { activeTab: 'resources' } })
-      }
-    } catch (error) {
-      setError(error.response?.data?.message || 'Помилка створення ресурсу')
-    } finally {
-      setIsSubmitting(false)
-    }
+    const tagsArray = resource.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+    const urlsArray = resource.urls.filter(url => url.trim() !== '')
+    
+    createMutation.mutate({
+      title: resource.title,
+      description: resource.description,
+      category: resource.category,
+      url: urlsArray[0] || '',
+      urls: urlsArray,
+      tags: tagsArray
+    })
   }
 
   return (
@@ -167,18 +177,18 @@ const CreateResource = () => {
                   <Button 
                     variant="secondary" 
                     onClick={() => navigate(-1)}
-                    disabled={isSubmitting}
+                    disabled={createMutation.isPending}
                   >
                     Скасувати
                   </Button>
                   <Button 
                     variant="primary" 
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={createMutation.isPending}
                     style={{ backgroundColor: '#7c3aed', borderColor: '#7c3aed' }}
                   >
                     <FiPlus className="me-2" />
-                    {isSubmitting ? 'Створення...' : 'Створити ресурс'}
+                    {createMutation.isPending ? 'Створення...' : 'Створити ресурс'}
                   </Button>
                 </div>
               </Form>
