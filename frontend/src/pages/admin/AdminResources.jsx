@@ -119,7 +119,7 @@ const AdminResources = () => {
             }}
           >
             <FiBook className="me-2" />
-            Ресурси
+            Усі ресурси
           </Nav.Link>
         </Nav.Item>
         <Nav.Item>
@@ -136,22 +136,6 @@ const AdminResources = () => {
           >
             <FiClock className="me-2" />
             Ресурси на модерації
-          </Nav.Link>
-        </Nav.Item>
-        <Nav.Item>
-          <Nav.Link
-            active={activeTab === 'approved'}
-            onClick={() => { setActiveTab('approved'); setPage(1); }}
-            style={{
-              color: activeTab === 'approved' ? '#a78bfa' : '#94a3b8',
-              backgroundColor: activeTab === 'approved' ? 'rgba(124,58,237,0.1)' : 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'approved' ? '2px solid #a78bfa' : '2px solid transparent',
-              cursor: 'pointer'
-            }}
-          >
-            <FiCheckCircle className="me-2" />
-            Схвалені
           </Nav.Link>
         </Nav.Item>
       </Nav>
