@@ -41,7 +41,7 @@ const Footer = () => {
         <Row>
           <Col className="text-center">
             <p className="mb-0 text-muted">
-              © 2024 Ресурсний центр. Зроблено з <FiHeart className="text-danger" /> для освіти.
+              © 2026 Ресурсний центр. Зроблено з <FiHeart className="text-danger" /> для освіти.
             </p>
           </Col>
         </Row>

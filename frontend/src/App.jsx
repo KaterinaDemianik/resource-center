@@ -376,7 +376,7 @@ function App() {
       <footer className="py-4 mt-auto">
         <Container>
           <div className="text-center">
-            <p className="mb-0 text-muted">&copy; 2024 Ресурсний центр. Всі права захищені.</p>
+            <p className="mb-0 text-muted">&copy; 2026 Ресурсний центр. Всі права захищені.</p>
           </div>
         </Container>
       </footer>
