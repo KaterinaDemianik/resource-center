@@ -34,7 +34,12 @@ router.get('/', [
     }
     
     if (req.query.search) {
-      query.$text = { $search: req.query.search };
+      // Частковий пошук (case-insensitive) в назві та описі
+      const searchRegex = new RegExp(req.query.search, 'i');
+      query.$or = [
+        { title: searchRegex },
+        { description: searchRegex }
+      ];
     }
 
     // Get resources with pagination
