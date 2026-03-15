@@ -32,6 +32,7 @@ const AdminDashboard = () => {
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '1rem',
+          marginTop: '2rem',
           marginBottom: '1.5rem'
         }}>
           {/* Users Stats */}
