@@ -18,8 +18,26 @@ const Register = () => {
 
   // Валідація email
   const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    // Перевірка базового формату
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+    
+    // Перевірка на популярні домени (опціонально)
+    const domain = email.split('@')[1];
+    const validDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'ukr.net', 'i.ua', 'meta.ua'];
+    
+    // Якщо домен не в списку популярних, перевіряємо чи він виглядає реально
+    if (!validDomains.includes(domain)) {
+      // Перевіряємо чи домен має хоча б 2 частини (name.tld)
+      const domainParts = domain.split('.');
+      if (domainParts.length < 2 || domainParts.some(part => part.length === 0)) {
+        return false;
+      }
+    }
+    
+    return true;
   };
 
   // Валідація форми на клієнті
@@ -199,6 +217,14 @@ const Register = () => {
                     placeholder="example@email.com"
                     value={formData.email}
                     onChange={handleChange}
+                    onBlur={(e) => {
+                      if (e.target.value && !validateEmail(e.target.value)) {
+                        setErrors(prev => ({
+                          ...prev,
+                          email: 'Введіть коректну email адресу (наприклад: name@gmail.com)'
+                        }));
+                      }
+                    }}
                     isInvalid={!!errors.email}
                     disabled={isLoading}
                   />
