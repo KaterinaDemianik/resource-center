@@ -15,6 +15,24 @@ const Register = () => {
   const [serverError, setServerError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [emailSuggestion, setEmailSuggestion] = useState('');
+
+  // Функція для перевірки типових помилок та підказки
+  const checkEmailTypo = (email) => {
+    if (!email.includes('@')) return null;
+    
+    const domain = email.split('@')[1];
+    const commonTypos = {
+      'gmial.com': 'gmail.com',
+      'gmai.com': 'gmail.com',
+      'gamil.com': 'gmail.com',
+      'yahooo.com': 'yahoo.com',
+      'outlok.com': 'outlook.com',
+      'hotmial.com': 'hotmail.com'
+    };
+    
+    return commonTypos[domain?.toLowerCase()] || null;
+  };
 
   // Валідація email
   const validateEmail = (email) => {
@@ -24,15 +42,71 @@ const Register = () => {
       return false;
     }
     
-    // Перевірка на популярні домени (опціонально)
-    const domain = email.split('@')[1];
-    const validDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'ukr.net', 'i.ua', 'meta.ua'];
+    const [localPart, domain] = email.split('@');
     
-    // Якщо домен не в списку популярних, перевіряємо чи він виглядає реально
-    if (!validDomains.includes(domain)) {
-      // Перевіряємо чи домен має хоча б 2 частини (name.tld)
+    // Перевірка локальної частини
+    if (localPart.length > 64) {
+      return false; // Максимальна довжина локальної частини
+    }
+    
+    // Перевірка на подвійні крапки
+    if (localPart.includes('..') || domain.includes('..')) {
+      return false;
+    }
+    
+    // Перевірка на крапку на початку або в кінці
+    if (localPart.startsWith('.') || localPart.endsWith('.')) {
+      return false;
+    }
+    
+    // Список одноразових/фейкових email доменів (блокуємо)
+    const disposableDomains = [
+      'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'mailinator.com',
+      'throwaway.email', 'temp-mail.org', 'fakeinbox.com', 'trashmail.com'
+    ];
+    
+    if (disposableDomains.includes(domain.toLowerCase())) {
+      return false;
+    }
+    
+    // Список популярних реальних доменів
+    const validDomains = [
+      'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'live.com',
+      'ukr.net', 'i.ua', 'meta.ua', 'icloud.com', 'protonmail.com',
+      'mail.ru', 'yandex.ru', 'yandex.ua'
+    ];
+    
+    // Перевірка на типові помилки в популярних доменах
+    const commonTypos = {
+      'gmial.com': 'gmail.com',
+      'gmai.com': 'gmail.com',
+      'gamil.com': 'gmail.com',
+      'yahooo.com': 'yahoo.com',
+      'outlok.com': 'outlook.com',
+      'hotmial.com': 'hotmail.com'
+    };
+    
+    if (commonTypos[domain.toLowerCase()]) {
+      return false; // Блокуємо типові помилки
+    }
+    
+    // Якщо домен не в списку популярних, перевіряємо структуру
+    if (!validDomains.includes(domain.toLowerCase())) {
       const domainParts = domain.split('.');
-      if (domainParts.length < 2 || domainParts.some(part => part.length === 0)) {
+      
+      // Домен має мати мінімум 2 частини
+      if (domainParts.length < 2) {
+        return false;
+      }
+      
+      // Перевірка що всі частини не порожні та мають мінімум 2 символи
+      if (domainParts.some(part => part.length < 2)) {
+        return false;
+      }
+      
+      // TLD має бути від 2 до 6 символів
+      const tld = domainParts[domainParts.length - 1];
+      if (tld.length < 2 || tld.length > 6) {
         return false;
       }
     }
@@ -218,11 +292,25 @@ const Register = () => {
                     value={formData.email}
                     onChange={handleChange}
                     onBlur={(e) => {
-                      if (e.target.value && !validateEmail(e.target.value)) {
-                        setErrors(prev => ({
-                          ...prev,
-                          email: 'Введіть коректну email адресу (наприклад: name@gmail.com)'
-                        }));
+                      const email = e.target.value;
+                      if (email) {
+                        const suggestion = checkEmailTypo(email);
+                        if (suggestion) {
+                          const localPart = email.split('@')[0];
+                          setEmailSuggestion(`${localPart}@${suggestion}`);
+                          setErrors(prev => ({
+                            ...prev,
+                            email: `Можливо ви мали на увазі: ${localPart}@${suggestion}?`
+                          }));
+                        } else if (!validateEmail(email)) {
+                          setEmailSuggestion('');
+                          setErrors(prev => ({
+                            ...prev,
+                            email: 'Введіть коректну email адресу (наприклад: name@gmail.com)'
+                          }));
+                        } else {
+                          setEmailSuggestion('');
+                        }
                       }
                     }}
                     isInvalid={!!errors.email}
