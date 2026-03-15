@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { FiPlus, FiTrash2 } from 'react-icons/fi'
+import broadcastSync, { SYNC_EVENTS } from '../utils/broadcastSync'
 
 const CreateResource = () => {
   const navigate = useNavigate()
@@ -33,6 +34,9 @@ const CreateResource = () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] })
       queryClient.invalidateQueries({ queryKey: ['admin-resources'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      
+      // Повідомляємо інші вкладки про створення ресурсу
+      broadcastSync.broadcast(SYNC_EVENTS.RESOURCE_CREATED, {})
       
       alert('Ресурс успішно створено!')
       navigate('/resources', { state: { activeTab: 'my' } })

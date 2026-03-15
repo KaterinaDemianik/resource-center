@@ -16,7 +16,11 @@ const AdminDashboard = () => {
 
   const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ['adminStats'],
-    queryFn: fetchStats
+    queryFn: fetchStats,
+    refetchInterval: 30 * 1000, // Автоматично оновлювати кожні 30 секунд
+    refetchOnWindowFocus: true, // Оновлювати при переключенні на вкладку
+    refetchOnMount: true,
+    staleTime: 20 * 1000
   })
 
   return (

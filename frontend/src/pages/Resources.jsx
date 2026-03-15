@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Container, Row, Col, Card, Form, Button, Badge, Spinner, Alert, Tabs, Tab } from 'react-bootstrap'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { FiSearch, FiFilter, FiEye, FiCalendar, FiUser, FiEdit, FiTrash2 } from 'react-icons/fi'
+import broadcastSync, { SYNC_EVENTS } from '../utils/broadcastSync'
 import './Resources.css'
 
 const Resources = () => {
@@ -52,7 +53,10 @@ const Resources = () => {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['resources', currentPage, selectedCategory, searchTerm, activeTab],
     queryFn: activeTab === 'my' ? fetchMyResources : fetchResources,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 секунд
+    refetchInterval: 30 * 1000, // Автоматично оновлювати кожні 30 секунд
+    refetchOnWindowFocus: true, // Оновлювати при переключенні на вкладку
+    refetchOnMount: true, // Оновлювати при монтуванні компонента
     enabled: activeTab === 'all' || (activeTab === 'my' && !!localStorage.getItem('token'))
   })
 
@@ -67,6 +71,32 @@ const Resources = () => {
     setCurrentPage(1)
   }
 
+  // Підписка на події з інших вкладок
+  useEffect(() => {
+    const unsubscribeCreated = broadcastSync.subscribe(SYNC_EVENTS.RESOURCE_CREATED, () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] })
+    })
+
+    const unsubscribeUpdated = broadcastSync.subscribe(SYNC_EVENTS.RESOURCE_UPDATED, () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] })
+    })
+
+    const unsubscribeDeleted = broadcastSync.subscribe(SYNC_EVENTS.RESOURCE_DELETED, () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] })
+    })
+
+    const unsubscribeApproved = broadcastSync.subscribe(SYNC_EVENTS.RESOURCE_APPROVED, () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] })
+    })
+
+    return () => {
+      unsubscribeCreated()
+      unsubscribeUpdated()
+      unsubscribeDeleted()
+      unsubscribeApproved()
+    }
+  }, [queryClient])
+
   const deleteMutation = useMutation({
     mutationFn: async (resourceId) => {
       const token = localStorage.getItem('token')
@@ -79,6 +109,8 @@ const Resources = () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] })
       queryClient.invalidateQueries({ queryKey: ['admin-resources'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      // Повідомляємо інші вкладки про видалення
+      broadcastSync.broadcast(SYNC_EVENTS.RESOURCE_DELETED, {})
       alert('Ресурс успішно видалено!')
     },
     onError: (error) => {

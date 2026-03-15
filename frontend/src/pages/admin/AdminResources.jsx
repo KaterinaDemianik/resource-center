@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { Container, Table, Badge, Button, Form, InputGroup, Pagination, Alert, Nav } from 'react-bootstrap';
 import { FiSearch, FiToggleLeft, FiToggleRight, FiTrash2, FiBook, FiClock, FiCheckCircle } from 'react-icons/fi';
+import broadcastSync, { SYNC_EVENTS } from '../../utils/broadcastSync';
 
 const fetchResources = async ({ page, search, status }) => {
   const token = localStorage.getItem('token');
@@ -22,7 +23,46 @@ const AdminResources = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['admin-resources', page, search, activeTab],
     queryFn: () => fetchResources({ page, search, status: activeTab }),
+    refetchInterval: 30 * 1000, // Автоматично оновлювати кожні 30 секунд
+    refetchOnWindowFocus: true, // Оновлювати при переключенні на вкладку
+    refetchOnMount: true, // Оновлювати при монтуванні
+    staleTime: 20 * 1000, // Дані застарівають через 20 секунд
   });
+
+  // Підписка на події з інших вкладок
+  useEffect(() => {
+    const unsubscribeCreated = broadcastSync.subscribe(SYNC_EVENTS.RESOURCE_CREATED, () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+    });
+
+    const unsubscribeUpdated = broadcastSync.subscribe(SYNC_EVENTS.RESOURCE_UPDATED, () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
+    });
+
+    const unsubscribeDeleted = broadcastSync.subscribe(SYNC_EVENTS.RESOURCE_DELETED, () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+    });
+
+    const unsubscribeApproved = broadcastSync.subscribe(SYNC_EVENTS.RESOURCE_APPROVED, () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+    });
+
+    const unsubscribeRejected = broadcastSync.subscribe(SYNC_EVENTS.RESOURCE_REJECTED, () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+    });
+
+    return () => {
+      unsubscribeCreated();
+      unsubscribeUpdated();
+      unsubscribeDeleted();
+      unsubscribeApproved();
+      unsubscribeRejected();
+    };
+  }, [queryClient]);
 
   const toggleMutation = useMutation({
     mutationFn: async (id) => {
@@ -35,8 +75,10 @@ const AdminResources = () => {
       // Інвалідуємо всі пов'язані запити для автоматичного оновлення
       queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
       queryClient.invalidateQueries({ queryKey: ['adminStats'] });
-      queryClient.invalidateQueries({ queryKey: ['resources'] }); // Оновити публічний список ресурсів
-      queryClient.invalidateQueries({ queryKey: ['userResources'] }); // Оновити ресурси користувача
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ['userResources'] });
+      // Повідомляємо інші вкладки
+      broadcastSync.broadcast(SYNC_EVENTS.RESOURCE_UPDATED, {});
     },
   });
 
@@ -51,8 +93,10 @@ const AdminResources = () => {
       // Інвалідуємо всі пов'язані запити для автоматичного оновлення
       queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
       queryClient.invalidateQueries({ queryKey: ['adminStats'] });
-      queryClient.invalidateQueries({ queryKey: ['resources'] }); // Оновити публічний список ресурсів
-      queryClient.invalidateQueries({ queryKey: ['userResources'] }); // Оновити ресурси користувача
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ['userResources'] });
+      // Повідомляємо інші вкладки
+      broadcastSync.broadcast(SYNC_EVENTS.RESOURCE_DELETED, {});
     },
   });
 
