@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const dns = require('dns').promises;
 const User = require('../models/User');
 const { sendVerificationEmail } = require('../utils/email');
 const { auth } = require('../middleware/auth');
@@ -44,6 +45,22 @@ const upload = multer({
 
 const router = express.Router();
 
+// Функція для перевірки чи домен має MX записи (може приймати email)
+async function verifyEmailDomain(email) {
+  try {
+    const domain = email.split('@')[1];
+    
+    // Перевірка MX записів
+    const mxRecords = await dns.resolveMx(domain);
+    
+    // Якщо є хоча б один MX запис, домен може приймати email
+    return mxRecords && mxRecords.length > 0;
+  } catch (error) {
+    // Якщо помилка DNS lookup, домен не існує або не має MX записів
+    return false;
+  }
+}
+
 // Register user
 router.post('/register', [
   body('firstName')
@@ -77,6 +94,15 @@ router.post('/register', [
     }
 
     const { firstName, lastName, email, password } = req.body;
+
+    // Перевірка чи домен email реальний (має MX записи)
+    const isValidDomain = await verifyEmailDomain(email);
+    if (!isValidDomain) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email адреса недійсна. Перевірте правильність введеного домену.'
+      });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
