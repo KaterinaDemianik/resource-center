@@ -43,7 +43,8 @@ const AdminLayout = () => {
         backgroundColor: '#16213e',
         border: '1px solid #2d3748',
         borderRadius: '12px',
-        padding: '1.5rem 1rem'
+        padding: '1.5rem 1rem',
+        marginTop: '2rem'
       }}>
         <h5 style={{ whiteSpace: 'nowrap', color: '#e2e8f0', marginBottom: '1.5rem' }}>
           Адмін панель
