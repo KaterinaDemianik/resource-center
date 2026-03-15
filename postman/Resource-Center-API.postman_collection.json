@@ -1,0 +1,728 @@
+{
+	"info": {
+		"_postman_id": "resource-center-api-2024",
+		"name": "Resource Center API",
+		"description": "Повна колекція API endpoints для проєкту Ресурсний Центр\n\nБазова URL: http://localhost:5001\n\nАвторизація: JWT Bearer Token",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Іван\",\n  \"lastName\": \"Петренко\",\n  \"email\": \"ivan.petrenko@gmail.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/auth/register",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Реєстрація нового користувача з email верифікацією"
+					}
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/auth/login",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Авторизація користувача. Повертає JWT token."
+					}
+				},
+				{
+					"name": "Verify Email",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5001/api/auth/verify-email/:token",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "auth", "verify-email", ":token"],
+							"variable": [
+								{
+									"key": "token",
+									"value": "your-verification-token-here"
+								}
+							]
+						},
+						"description": "Підтвердження email адреси через токен з листа"
+					}
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/auth/me",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "auth", "me"]
+						},
+						"description": "Отримати інформацію про поточного користувача"
+					}
+				},
+				{
+					"name": "Upload Avatar",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "avatar",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/auth/avatar",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "auth", "avatar"]
+						},
+						"description": "Завантаження аватара користувача"
+					}
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/auth/change-password",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "auth", "change-password"]
+						},
+						"description": "Зміна паролю користувача"
+					}
+				}
+			]
+		},
+		{
+			"name": "Resources",
+			"item": [
+				{
+					"name": "Get All Resources",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5001/api/resources?page=1&limit=10&category=education&search=навчання",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "resources"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "category",
+									"value": "education",
+									"description": "education, technology, health, business, entertainment, other"
+								},
+								{
+									"key": "search",
+									"value": "навчання",
+									"description": "Частковий пошук в назві та описі"
+								}
+							]
+						},
+						"description": "Отримати список всіх активних та схвалених ресурсів з пошуком та фільтрацією"
+					}
+				},
+				{
+					"name": "Get Resource by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5001/api/resources/:id",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "resources", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "resource-id-here"
+								}
+							]
+						},
+						"description": "Отримати детальну інформацію про ресурс"
+					}
+				},
+				{
+					"name": "Create Resource",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Дистанційне навчання\",\n  \"description\": \"Платформа для онлайн навчання\",\n  \"category\": \"education\",\n  \"tags\": [\"навчання\", \"онлайн\", \"курси\"],\n  \"url\": \"https://example.com\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/resources",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "resources"]
+						},
+						"description": "Створити новий ресурс (потребує авторизації)"
+					}
+				},
+				{
+					"name": "Update Resource",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Оновлена назва\",\n  \"description\": \"Оновлений опис\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/resources/:id",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "resources", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "resource-id-here"
+								}
+							]
+						},
+						"description": "Оновити ресурс (тільки автор)"
+					}
+				},
+				{
+					"name": "Delete Resource",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/resources/:id",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "resources", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "resource-id-here"
+								}
+							]
+						},
+						"description": "Видалити ресурс (тільки автор)"
+					}
+				},
+				{
+					"name": "Get My Resources",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/resources/user/my-resources?page=1&limit=10",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "resources", "user", "my-resources"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Отримати ресурси поточного користувача"
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Get Admin Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/admin/stats",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "admin", "stats"]
+						},
+						"description": "Отримати статистику (тільки адмін)"
+					}
+				},
+				{
+					"name": "Get Admin Resources",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/admin/resources?status=pending&page=1&limit=15",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "admin", "resources"],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending",
+									"description": "all, pending, approved, rejected"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "15"
+								}
+							]
+						},
+						"description": "Отримати ресурси для модерації (тільки адмін)"
+					}
+				},
+				{
+					"name": "Approve Resource",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/admin/resources/:id/approve",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "admin", "resources", ":id", "approve"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "resource-id-here"
+								}
+							]
+						},
+						"description": "Схвалити ресурс (тільки адмін)"
+					}
+				},
+				{
+					"name": "Reject Resource",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/admin/resources/:id/reject",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "admin", "resources", ":id", "reject"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "resource-id-here"
+								}
+							]
+						},
+						"description": "Відхилити ресурс (тільки адмін)"
+					}
+				},
+				{
+					"name": "Toggle Resource Active",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/admin/resources/:id/toggle-active",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "admin", "resources", ":id", "toggle-active"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "resource-id-here"
+								}
+							]
+						},
+						"description": "Активувати/деактивувати ресурс (тільки адмін)"
+					}
+				},
+				{
+					"name": "Delete Resource (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/admin/resources/:id",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "admin", "resources", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "resource-id-here"
+								}
+							]
+						},
+						"description": "Видалити ресурс (тільки адмін)"
+					}
+				},
+				{
+					"name": "Get Admin Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/admin/users?status=all&page=1&limit=15",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "admin", "users"],
+							"query": [
+								{
+									"key": "status",
+									"value": "all",
+									"description": "all, active, inactive"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "15"
+								}
+							]
+						},
+						"description": "Отримати список користувачів (тільки адмін)"
+					}
+				},
+				{
+					"name": "Toggle User Active",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5001/api/admin/users/:id/toggle-active",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "admin", "users", ":id", "toggle-active"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-id-here"
+								}
+							]
+						},
+						"description": "Активувати/деактивувати користувача (тільки адмін)"
+					}
+				}
+			]
+		},
+		{
+			"name": "GraphQL",
+			"item": [
+				{
+					"name": "GraphQL - Get Resources",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetResources($filter: ResourceFilterInput) { resources(filter: $filter) { success resources { id title description category author { firstName lastName } isActive isApproved createdAt } total page pages } }\",\n  \"variables\": {\n    \"filter\": {\n      \"category\": \"education\",\n      \"search\": \"навчання\",\n      \"page\": 1,\n      \"limit\": 10\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL запит для отримання ресурсів з фільтрацією"
+					}
+				},
+				{
+					"name": "GraphQL - Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation Register($input: RegisterInput!) { register(input: $input) { success message token user { id firstName lastName email } } }\",\n  \"variables\": {\n    \"input\": {\n      \"firstName\": \"Марія\",\n      \"lastName\": \"Коваленко\",\n      \"email\": \"maria.kovalenko@gmail.com\",\n      \"password\": \"password123\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для реєстрації користувача"
+					}
+				},
+				{
+					"name": "GraphQL - Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation Login($input: LoginInput!) { login(input: $input) { success message token user { id firstName lastName email role } } }\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"admin@example.com\",\n      \"password\": \"password123\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для авторизації"
+					}
+				},
+				{
+					"name": "GraphQL - Create Resource",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateResource($input: ResourceInput!) { createResource(input: $input) { success message resource { id title description category } } }\",\n  \"variables\": {\n    \"input\": {\n      \"title\": \"Онлайн курси програмування\",\n      \"description\": \"Безкоштовні курси для початківців\",\n      \"category\": \"education\",\n      \"tags\": [\"програмування\", \"курси\", \"навчання\"],\n      \"url\": \"https://example.com/courses\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для створення ресурсу"
+					}
+				},
+				{
+					"name": "GraphQL - Admin Stats",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query { adminStats { success totalUsers activeUsers totalResources approvedResources pendingResources } }\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL запит для отримання статистики (тільки адмін)"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": "your-jwt-token-here",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "admin-jwt-token-here",
+			"type": "string"
+		}
+	]
+}
