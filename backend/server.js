@@ -15,7 +15,15 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Дозволити inline scripts та eval для GraphiQL
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    }
+  }
 }));
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',

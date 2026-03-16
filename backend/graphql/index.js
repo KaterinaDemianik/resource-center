@@ -21,7 +21,7 @@ const getUser = (req) => {
 const graphqlMiddleware = graphqlHTTP((req) => ({
   schema,
   rootValue: resolvers,
-  graphiql: process.env.NODE_ENV !== 'production',
+  graphiql: true, // Увімкнути GraphiQL для тестування
   context: {
     user: getUser(req),
     req
