@@ -3,34 +3,50 @@ const jwt = require('jsonwebtoken');
 const schema = require('./schema');
 const resolvers = require('./resolvers');
 
-// Middleware to extract user from JWT token
-const getUser = (req) => {
+/**
+ * Витягує дані користувача з JWT токену
+ * @param {Object} req - Express request об'єкт
+ * @returns {Object|null} - Дані користувача або null
+ */
+const extractUserFromToken = (req) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return null;
 
   const token = authHeader.replace('Bearer ', '');
+  if (!token) return null;
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
-    return decoded;
+    return jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
   } catch (error) {
+    console.error('JWT verification error:', error.message);
     return null;
   }
 };
 
-// GraphQL middleware configuration
-const graphqlMiddleware = graphqlHTTP((req) => ({
+/**
+ * Конфігурація GraphQL middleware з динамічним контекстом
+ * @param {Object} req - Express request об'єкт
+ * @returns {Object} - GraphQL конфігурація
+ */
+const createGraphQLConfig = (req) => ({
   schema,
   rootValue: resolvers,
-  graphiql: true, // Увімкнути GraphiQL для тестування
+  graphiql: process.env.NODE_ENV !== 'production', // GraphiQL тільки в development
   context: {
-    user: getUser(req),
-    req
+    user: extractUserFromToken(req),
+    req,
+    // Додаємо час запиту для логування
+    timestamp: new Date().toISOString()
   },
   customFormatErrorFn: (error) => ({
     message: error.message,
     locations: error.locations,
-    path: error.path
+    path: error.path,
+    extensions: {
+      code: error.extensions?.code || 'INTERNAL_SERVER_ERROR'
+    }
   })
-}));
+});
 
-module.exports = graphqlMiddleware;
+// Експорт готового middleware
+module.exports = graphqlHTTP(createGraphQLConfig);

@@ -1,6 +1,11 @@
 const { buildSchema } = require('graphql');
 
+/**
+ * GraphQL схема для Resource Center API
+ * Визначає типи даних, запити та мутації
+ */
 const schema = buildSchema(`
+  # Тип користувача системи
   type User {
     id: ID!
     firstName: String!
@@ -13,6 +18,7 @@ const schema = buildSchema(`
     updatedAt: String!
   }
 
+  # Тип ресурсу системи
   type Resource {
     id: ID!
     title: String!
@@ -32,6 +38,7 @@ const schema = buildSchema(`
     updatedAt: String!
   }
 
+  # Payload для авторизаційних операцій
   type AuthPayload {
     success: Boolean!
     message: String!
@@ -39,6 +46,7 @@ const schema = buildSchema(`
     user: User
   }
 
+  # Payload для операцій з одним ресурсом
   type ResourcePayload {
     success: Boolean!
     message: String!
