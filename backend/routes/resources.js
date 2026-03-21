@@ -5,7 +5,63 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all resources (public, with search and filtering)
+/**
+ * Відправляє відповідь з валідаційними помилками
+ * @param {Object} res - Express response об'єкт
+ * @param {Array} errors - Масив помилок валідації
+ */
+const sendValidationErrors = (res, errors) => {
+  return res.status(400).json({
+    success: false,
+    message: 'Validation errors',
+    errors: errors.array()
+  });
+};
+
+/**
+ * Форматує об'єкт пагінації
+ * @param {number} page - Поточна сторінка
+ * @param {number} limit - Ліміт елементів
+ * @param {number} total - Загальна кількість
+ * @returns {Object} - Об'єкт пагінації
+ */
+const formatPagination = (page, limit, total) => {
+  const totalPages = Math.ceil(total / limit);
+  return {
+    current: page,
+    pages: totalPages,
+    total,
+    hasNext: page < totalPages,
+    hasPrev: page > 1
+  };
+};
+
+/**
+ * Будує MongoDB запит на основі фільтрів
+ * @param {Object} queryParams - Параметри запиту
+ * @returns {Object} - MongoDB query об'єкт
+ */
+const buildResourceQuery = (queryParams) => {
+  let query = { isActive: true, isApproved: true };
+  
+  if (queryParams.category) {
+    query.category = queryParams.category;
+  }
+  
+  if (queryParams.search) {
+    const searchRegex = new RegExp(queryParams.search, 'i');
+    query.$or = [
+      { title: searchRegex },
+      { description: searchRegex }
+    ];
+  }
+  
+  return query;
+};
+
+/**
+ * Отримує всі ресурси з пагінацією та фільтрацією
+ */
 router.get('/', [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be between 1 and 50'),
@@ -15,53 +71,32 @@ router.get('/', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation errors',
-        errors: errors.array()
-      });
+      return sendValidationErrors(res, errors);
     }
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    // Параметри пагінації
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
     
-    // Build query
-    let query = { isActive: true, isApproved: true };
-    
-    if (req.query.category) {
-      query.category = req.query.category;
-    }
-    
-    if (req.query.search) {
-      // Частковий пошук (case-insensitive) в назві та описі
-      const searchRegex = new RegExp(req.query.search, 'i');
-      query.$or = [
-        { title: searchRegex },
-        { description: searchRegex }
-      ];
-    }
+    // Побудова запиту з фільтрами
+    const query = buildResourceQuery(req.query);
 
-    // Get resources with pagination
-    const resources = await Resource.find(query)
-      .populate('author', 'firstName lastName')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    const total = await Resource.countDocuments(query);
+    // Отримання ресурсів з пагінацією
+    const [resources, total] = await Promise.all([
+      Resource.find(query)
+        .populate('author', 'firstName lastName')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Resource.countDocuments(query)
+    ]);
 
     res.json({
       success: true,
       data: {
         resources,
-        pagination: {
-          current: page,
-          pages: Math.ceil(total / limit),
-          total,
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
-        }
+        pagination: formatPagination(page, limit, total)
       }
     });
 
