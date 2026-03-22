@@ -1,38 +1,73 @@
 const mongoose = require('mongoose');
 
+/**
+ * Валідація URL з кращим regex
+ */
+const urlValidationRegex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
+
+/**
+ * Дозволені категорії ресурсів
+ */
+const VALID_CATEGORIES = ['education', 'technology', 'health', 'business', 'entertainment', 'other'];
+
+/**
+ * Схема ресурсу з валідацією та індексами
+ */
 const resourceSchema = new mongoose.Schema({
   title: {
     type: String,
     required: [true, 'Title is required'],
     trim: true,
-    maxlength: [200, 'Title can not exceed 200 characters']
+    maxlength: [200, 'Title cannot exceed 200 characters'],
+    validate: {
+      validator: function(v) {
+        return v && v.trim().length > 0;
+      },
+      message: 'Title cannot be empty'
+    }
   },
   description: {
     type: String,
     required: [true, 'Description is required'],
     trim: true,
-    maxlength: [1000, 'Description cannot exceed 1000 characters']
+    maxlength: [2000, 'Description cannot exceed 2000 characters'],
+    validate: {
+      validator: function(v) {
+        return v && v.trim().length > 10;
+      },
+      message: 'Description must be at least 10 characters long'
+    }
   },
   category: {
     type: String,
     required: [true, 'Category is required'],
-    enum: ['education', 'technology', 'health', 'business', 'entertainment', 'other'],
+    enum: {
+      values: VALID_CATEGORIES,
+      message: 'Category must be one of: ' + VALID_CATEGORIES.join(', ')
+    },
     default: 'other'
   },
   tags: [{
     type: String,
     trim: true,
-    maxlength: [30, 'Tag cannot exceed 30 characters']
+    maxlength: [30, 'Tag cannot exceed 30 characters'],
+    validate: {
+      validator: function(v) {
+        return v && v.trim().length > 0;
+      },
+      message: 'Tag cannot be empty'
+    }
   }],
   url: {
     type: String,
     trim: true,
-    match: [/^https?:\/\/.+/, 'Please enter a valid URL']
+    required: [true, 'URL is required'],
+    match: [urlValidationRegex, 'Please enter a valid URL starting with http:// or https://']
   },
   urls: [{
     type: String,
     trim: true,
-    match: [/^https?:\/\/.+/, 'Please enter a valid URL']
+    match: [urlValidationRegex, 'Please enter a valid URL starting with http:// or https://']
   }],
   author: {
     type: mongoose.Schema.Types.ObjectId,
@@ -78,17 +113,42 @@ const resourceSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for search functionality
-resourceSchema.index({ title: 'text', description: 'text', tags: 'text' });
-resourceSchema.index({ category: 1, isActive: 1, isApproved: 1 });
-resourceSchema.index({ createdAt: -1 });
+/**
+ * Індекси для оптимізації запитів
+ */
+resourceSchema.index({ title: 'text', description: 'text', tags: 'text' }); // Пошук по тексту
+resourceSchema.index({ category: 1, isActive: 1, isApproved: 1 }); // Фільтрація по категорії та статусу
+resourceSchema.index({ author: 1, createdAt: -1 }); // Ресурси користувача
+resourceSchema.index({ createdAt: -1 }); // Сортування по даті
 
-// Virtual for average rating
+/**
+ * Віртуальне поле для середнього рейтингу
+ */
 resourceSchema.virtual('averageRating').get(function() {
-  return this.ratingCount > 0 ? (this.rating / this.ratingCount).toFixed(1) : 0;
+  if (this.ratingCount === 0) return '0.0';
+  return (this.rating / this.ratingCount).toFixed(1);
 });
 
-// Ensure virtual fields are serialized
-resourceSchema.set('toJSON', { virtuals: true });
+/**
+ * Віртуальне поле для статусу модерації
+ */
+resourceSchema.virtual('moderationStatus').get(function() {
+  if (!this.isActive) return 'inactive';
+  if (!this.isApproved) {
+    return this.rejectedAt ? 'rejected' : 'pending';
+  }
+  return 'approved';
+});
+
+/**
+ * Включає віртуальні поля в JSON
+ */
+resourceSchema.set('toJSON', { 
+  virtuals: true,
+  transform: function(doc, ret) {
+    delete ret.__v;
+    return ret;
+  }
+});
 
 module.exports = mongoose.model('Resource', resourceSchema);
