@@ -10,7 +10,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Налаштування multer для завантаження аватарок
+/**
+ * Налаштування multer для завантаження аватарок
+ */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = 'uploads/avatars';
@@ -21,10 +23,13 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'avatar-' + req.user.userId + '-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, `avatar-${req.user.userId}-${uniqueSuffix}${path.extname(file.originalname)}`);
   }
 });
 
+/**
+ * Фільтр для перевірки типів файлів
+ */
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -33,35 +38,62 @@ const fileFilter = (req, file, cb) => {
   if (extname && mimetype) {
     cb(null, true);
   } else {
-    cb(new Error('Тільки зображення дозволені (jpeg, jpg, png, gif)'));
+    cb(new Error('Only images are allowed (jpeg, jpg, png, gif)'));
   }
 };
 
 const upload = multer({
-  storage: storage,
+  storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: fileFilter
+  fileFilter
 });
 
 const router = express.Router();
 
-// Функція для перевірки чи домен має MX записи (може приймати email)
+/**
+ * Перевіряє чи домен має MX записи
+ * @param {string} email - Email для перевірки
+ * @returns {Promise<boolean>} - Результат перевірки
+ */
 async function verifyEmailDomain(email) {
   try {
     const domain = email.split('@')[1];
-    
-    // Перевірка MX записів
     const mxRecords = await dns.resolveMx(domain);
-    
-    // Якщо є хоча б один MX запис, домен може приймати email
     return mxRecords && mxRecords.length > 0;
   } catch (error) {
-    // Якщо помилка DNS lookup, домен не існує або не має MX записів
     return false;
   }
 }
 
-// Register user
+/**
+ * Генерує JWT токен для користувача
+ * @param {Object} user - Об'єкт користувача
+ * @returns {string} - JWT токен
+ */
+const generateToken = (user) => {
+  return jwt.sign(
+    { userId: user._id, email: user.email, role: user.role },
+    process.env.JWT_SECRET || 'fallback-secret',
+    { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+  );
+};
+
+/**
+ * Відправляє відповідь з помилками валідації
+ * @param {Object} res - Express response об'єкт
+ * @param {Array} errors - Масив помилок
+ */
+const sendValidationErrors = (res, errors) => {
+  return res.status(400).json({
+    success: false,
+    message: 'Validation failed',
+    errors: errors.array()
+  });
+};
+
+/**
+ * Реєстрація нового користувача
+ */
 router.post('/register', [
   body('firstName')
     .trim()
@@ -86,11 +118,7 @@ router.post('/register', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
+      return sendValidationErrors(res, errors);
     }
 
     const { firstName, lastName, email, password } = req.body;
@@ -197,68 +225,56 @@ router.get('/verify-email/:token', async (req, res) => {
   }
 });
 
-// Login user
+/**
+ * Вхід користувача в систему
+ */
 router.post('/login', [
-  body('email')
-    .isEmail()
-    .withMessage('Please enter a valid email')
-    .customSanitizer(value => value.toLowerCase()),
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required')
+  body('email').isEmail().withMessage('Please enter a valid email'),
+  body('password').notEmpty().withMessage('Password is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
+      return sendValidationErrors(res, errors);
     }
 
     const { email, password } = req.body;
 
-    // Find user
+    // Пошук користувача
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    // Check if email is verified
+    // Перевірка статусу користувача
     if (!user.emailVerified) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: 'Please verify your email before logging in'
       });
     }
 
-    // Check if user is active
     if (!user.isActive) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: 'Account is deactivated'
       });
     }
 
-    // Check password
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(400).json({
+    // Перевірка паролю
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-    );
+    // Генерація JWT токену
+    const token = generateToken(user);
 
     res.json({
       success: true,
