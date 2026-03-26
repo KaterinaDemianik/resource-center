@@ -7,31 +7,48 @@ const MongoStore = require('connect-mongo');
 const connectDB = require('./config/database');
 require('dotenv').config();
 
+/**
+ * Конфігурація сервера
+ */
+const PORT = process.env.PORT || 5001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+
 // Connect to database
 connectDB();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Дозволити inline scripts та eval для GraphiQL
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
+/**
+ * Налаштування middleware
+ */
+const configureMiddleware = () => {
+  // Security headers
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Дозволити inline scripts та eval для GraphiQL
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      }
     }
-  }
-}));
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true
-}));
-app.use(morgan('combined'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+  }));
+
+  // CORS configuration
+  app.use(cors({
+    origin: CLIENT_URL,
+    credentials: true
+  }));
+
+  // Logging
+  app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+  // Body parsers
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+};
 
 // Статична папка для завантажених файлів
 app.use('/uploads', express.static('uploads', {
@@ -41,53 +58,90 @@ app.use('/uploads', express.static('uploads', {
   }
 }));
 
-// Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'resource-center-secret',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/resource-center'
-  }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+/**
+ * Налаштування сесій
+ */
+const configureSession = () => {
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'resource-center-secret',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/resource-center'
+    }),
+    cookie: {
+      secure: NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
+};
 
-// Routes
-app.get('/api/health', (req, res) => {
-  res.json({ message: 'Resource Center API is running', timestamp: new Date().toISOString() });
-});
-
-// RESTful API routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/resources', require('./routes/resources'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/notifications', require('./routes/notifications'));
-
-// GraphQL API endpoint
-const graphqlMiddleware = require('./graphql');
-app.use('/graphql', graphqlMiddleware);
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'production' ? {} : err.message
+/**
+ * Налаштування роутів
+ */
+const configureRoutes = () => {
+  // Health check endpoint
+  app.get('/api/health', (req, res) => {
+    res.json({
+      success: true,
+      message: 'Server is running',
+      timestamp: new Date().toISOString(),
+      environment: NODE_ENV
+    });
   });
-});
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
+  // API routes
+  app.use('/api/auth', require('./routes/auth'));
+  app.use('/api/resources', require('./routes/resources'));
+  app.use('/api/admin', require('./routes/admin'));
+  app.use('/api/notifications', require('./routes/notifications'));
+  app.use('/graphql', require('./graphql'));
+};
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+/**
+ * Глобальний обробник помилок
+ */
+const configureErrorHandling = () => {
+  app.use((err, req, res, next) => {
+    console.error('Error:', err.stack);
+    
+    res.status(err.status || 500).json({ 
+      success: false,
+      message: err.message || 'Something went wrong!',
+      error: NODE_ENV === 'production' ? {} : {
+        message: err.message,
+        stack: err.stack
+      }
+    });
+  });
+
+  // 404 handler
+  app.use('*', (req, res) => {
+    res.status(404).json({
+      success: false,
+      message: 'Route not found'
+    });
+  });
+};
+
+/**
+ * Запуск сервера
+ */
+const startServer = () => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📝 Environment: ${NODE_ENV}`);
+    console.log(`🔗 Client URL: ${CLIENT_URL}`);
+    console.log(`🗄️  MongoDB: ${process.env.MONGODB_URI ? 'Remote' : 'localhost'}`);
+  });
+};
+
+// Ініціалізація сервера
+configureMiddleware();
+configureSession();
+configureRoutes();
+configureErrorHandling();
+startServer();
 
 module.exports = app;
