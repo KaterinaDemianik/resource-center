@@ -94,13 +94,13 @@ async function addTestResources() {
   try {
     // Підключення до MongoDB
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/resource-center');
-    console.log('✅ MongoDB підключено');
+    console.log('MongoDB підключено');
 
     // Знайти користувача
     const user = await User.findOne({ email: 'demianikkaterina@gmail.com' });
     
     if (!user) {
-      console.log('❌ Користувача demianikkaterina@gmail.com не знайдено');
+      console.log('Користувача demianikkaterina@gmail.com не знайдено');
       console.log('Створюю нового користувача...');
       
       // Створити користувача якщо не існує
@@ -115,19 +115,19 @@ async function addTestResources() {
       });
       
       await newUser.save();
-      console.log('✅ Користувача створено');
+      console.log('Користувача створено');
       
       // Додати ресурси для нового користувача
       await addResourcesForUser(newUser._id);
     } else {
-      console.log(`✅ Користувача знайдено: ${user.firstName} ${user.lastName}`);
+      console.log(`Користувача знайдено: ${user.firstName} ${user.lastName}`);
       await addResourcesForUser(user._id);
     }
 
-    console.log('✅ Всі ресурси успішно додано!');
+    console.log('Всі ресурси успішно додано!');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Помилка:', error);
+    console.error('Помилка:', error);
     process.exit(1);
   }
 }
@@ -144,7 +144,7 @@ async function addResourcesForUser(userId) {
     });
     
     if (existing) {
-      console.log(`⏭️  Ресурс "${resourceData.title}" вже існує`);
+      console.log(`⏭Ресурс "${resourceData.title}" вже існує`);
       continue;
     }
     
@@ -164,13 +164,13 @@ async function addResourcesForUser(userId) {
     
     if (resource.isApproved) {
       approvedCount++;
-      console.log(`✅ Додано та схвалено: "${resourceData.title}"`);
+      console.log(`Додано та схвалено: "${resourceData.title}"`);
     } else {
-      console.log(`📝 Додано (на модерації): "${resourceData.title}"`);
+      console.log(`Додано (на модерації): "${resourceData.title}"`);
     }
   }
   
-  console.log(`\n📊 Статистика:`);
+  console.log(`\nСтатистика:`);
   console.log(`   Всього додано: ${addedCount}`);
   console.log(`   Схвалено: ${approvedCount}`);
   console.log(`   На модерації: ${addedCount - approvedCount}`);
