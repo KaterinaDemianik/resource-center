@@ -7,66 +7,92 @@ const { createNotification } = require('./notifications');
 
 const router = express.Router();
 
-// Get all resources for admin (including pending approval)
+/**
+ * Відправляє відповідь з помилками валідації
+ * @param {Object} res - Express response об'єкт
+ * @param {Array} errors - Масив помилок
+ */
+const sendValidationErrors = (res, errors) => {
+  return res.status(400).json({
+    success: false,
+    message: 'Validation errors',
+    errors: errors.array()
+  });
+};
+
+/**
+ * Форматує об'єкт пагінації
+ * @param {number} page - Поточна сторінка
+ * @param {number} limit - Ліміт елементів
+ * @param {number} total - Загальна кількість
+ * @returns {Object} - Об'єкт пагінації
+ */
+const formatPagination = (page, limit, total) => {
+  const totalPages = Math.ceil(total / limit);
+  return {
+    current: page,
+    pages: totalPages,
+    total,
+    hasNext: page < totalPages,
+    hasPrev: page > 1
+  };
+};
+
+/**
+ * Будує запит для фільтрації ресурсів по статусу
+ * @param {string} status - Статус фільтрації
+ * @returns {Object} - MongoDB query об'єкт
+ */
+const buildResourceStatusQuery = (status) => {
+  const statusQueries = {
+    pending: { isApproved: false, rejectedAt: null },
+    approved: { isApproved: true, isActive: true },
+    inactive: { isActive: false, isApproved: true },
+    rejected: { rejectedAt: { $ne: null } }
+  };
+  
+  return statusQueries[status] || {};
+};
+
+/**
+ * Отримує всі ресурси для адміністратора з фільтрацією по статусу
+ */
 router.get('/resources', adminAuth, [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be between 1 and 50'),
-  query('status').optional().isIn(['all', 'pending', 'approved', 'inactive']).withMessage('Invalid status filter')
+  query('status').optional().isIn(['all', 'pending', 'approved', 'inactive', 'rejected']).withMessage('Invalid status filter')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation errors',
-        errors: errors.array()
-      });
+      return sendValidationErrors(res, errors);
     }
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    // Параметри пагінації
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
     
-    // Build query based on status filter
-    let query = {};
-    switch (req.query.status) {
-      case 'pending':
-        query = { isApproved: false, rejectedAt: null };
-        break;
-      case 'approved':
-        query = { isApproved: true, isActive: true };
-        break;
-      case 'inactive':
-        query = { isActive: false, isApproved: true };
-        break;
-      case 'rejected':
-        query = { rejectedAt: { $ne: null } };
-        break;
-      default:
-        // 'all' or no filter - show everything
-        break;
-    }
+    // Побудова запиту з фільтром по статусу
+    const status = req.query.status === 'all' ? null : req.query.status;
+    const query = buildResourceStatusQuery(status);
 
-    const resources = await Resource.find(query)
-      .populate('author', 'firstName lastName email')
-      .populate('approvedBy', 'firstName lastName')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    const total = await Resource.countDocuments(query);
+    // Отримання ресурсів з пагінацією
+    const [resources, total] = await Promise.all([
+      Resource.find(query)
+        .populate('author', 'firstName lastName email')
+        .populate('approvedBy', 'firstName lastName')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Resource.countDocuments(query)
+    ]);
 
     res.json({
       success: true,
       data: {
         resources,
-        pagination: {
-          current: page,
-          pages: Math.ceil(total / limit),
-          total,
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
-        }
+        pagination: formatPagination(page, limit, total)
       }
     });
 
