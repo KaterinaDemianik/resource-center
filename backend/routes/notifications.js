@@ -3,33 +3,75 @@ const router = express.Router();
 const Notification = require('../models/Notification');
 const { auth } = require('../middleware/auth');
 
-// Get user's notifications
+/**
+ * Форматує об'єкт пагінації
+ * @param {number} page - Поточна сторінка
+ * @param {number} limit - Ліміт елементів
+ * @param {number} total - Загальна кількість
+ * @returns {Object} - Об'єкт пагінації
+ */
+const formatPagination = (page, limit, total) => {
+  return {
+    total,
+    page,
+    pages: Math.ceil(total / limit),
+    hasNext: page < Math.ceil(total / limit),
+    hasPrev: page > 1
+  };
+};
+
+/**
+ * Отримує кількість непрочитаних сповіщень користувача
+ * @param {string} userId - ID користувача
+ * @returns {Promise<number>} - Кількість непрочитаних сповіщень
+ */
+const getUnreadCount = async (userId) => {
+  return await Notification.countDocuments({ 
+    user: userId, 
+    isRead: false 
+  });
+};
+
+/**
+ * Перевіряє чи сповіщення належить користувачу
+ * @param {string} notificationId - ID сповіщення
+ * @param {string} userId - ID користувача
+ * @returns {Promise<Object|null>} - Сповіщення або null
+ */
+const findUserNotification = async (notificationId, userId) => {
+  return await Notification.findOne({
+    _id: notificationId,
+    user: userId
+  });
+};
+
+/**
+ * Отримує сповіщення користувача з пагінацією
+ */
 router.get('/', auth, async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    // Параметри пагінації
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
     const skip = (page - 1) * limit;
 
-    const notifications = await Notification.find({ user: req.user.userId })
-      .populate('relatedResource', 'title')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    const total = await Notification.countDocuments({ user: req.user.userId });
-    const unreadCount = await Notification.countDocuments({ 
-      user: req.user.userId, 
-      isRead: false 
-    });
+    // Паралельне отримання даних
+    const [notifications, total, unreadCount] = await Promise.all([
+      Notification.find({ user: req.user.userId })
+        .populate('relatedResource', 'title')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Notification.countDocuments({ user: req.user.userId }),
+      getUnreadCount(req.user.userId)
+    ]);
 
     res.json({
       success: true,
       notifications,
       pagination: {
-        total,
-        unreadCount,
-        page,
-        pages: Math.ceil(total / limit)
+        ...formatPagination(page, limit, total),
+        unreadCount
       }
     });
   } catch (error) {
@@ -41,13 +83,12 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Get unread count
+/**
+ * Отримує кількість непрочитаних сповіщень
+ */
 router.get('/unread-count', auth, async (req, res) => {
   try {
-    const count = await Notification.countDocuments({ 
-      user: req.user.userId, 
-      isRead: false 
-    });
+    const count = await getUnreadCount(req.user.userId);
 
     res.json({
       success: true,
@@ -62,13 +103,12 @@ router.get('/unread-count', auth, async (req, res) => {
   }
 });
 
-// Mark notification as read
+/**
+ * Позначає сповіщення як прочитане
+ */
 router.patch('/:id/read', auth, async (req, res) => {
   try {
-    const notification = await Notification.findOne({
-      _id: req.params.id,
-      user: req.user.userId
-    });
+    const notification = await findUserNotification(req.params.id, req.user.userId);
 
     if (!notification) {
       return res.status(404).json({
@@ -142,7 +182,15 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// Helper function to create notification (used by other routes)
+/**
+ * Створює нове сповіщення для користувача
+ * @param {string} userId - ID користувача
+ * @param {string} type - Тип сповіщення
+ * @param {string} title - Заголовок сповіщення
+ * @param {string} message - Повідомлення сповіщення
+ * @param {string|null} relatedResourceId - ID пов'язаного ресурсу
+ * @returns {Promise<Object|null>} - Створене сповіщення або null
+ */
 const createNotification = async (userId, type, title, message, relatedResourceId = null) => {
   try {
     const notification = new Notification({
@@ -152,10 +200,12 @@ const createNotification = async (userId, type, title, message, relatedResourceI
       message,
       relatedResource: relatedResourceId
     });
+    
     await notification.save();
     return notification;
   } catch (error) {
     console.error('Create notification error:', error);
+    return null;
   }
 };
 
