@@ -116,6 +116,11 @@ export const resourceQueries = {
           category
           tags
           url
+          author {
+            id
+            firstName
+            lastName
+          }
           isActive
           isApproved
           views
@@ -224,6 +229,16 @@ export const authQueries = {
     }
   `,
 
+  // Підтвердження email
+  verifyEmail: `
+    mutation VerifyEmail($token: String!) {
+      verifyEmail(token: $token) {
+        success
+        message
+      }
+    }
+  `,
+
   // Отримати поточного користувача
   me: `
     query Me {
@@ -247,8 +262,8 @@ export const authQueries = {
 export const adminQueries = {
   // Отримати ресурси для адміна
   getAdminResources: `
-    query GetAdminResources($status: String, $page: Int, $limit: Int) {
-      adminResources(status: $status, page: $page, limit: $limit) {
+    query GetAdminResources($status: String, $search: String, $page: Int, $limit: Int) {
+      adminResources(status: $status, search: $search, page: $page, limit: $limit) {
         success
         resources {
           id

@@ -1,28 +1,35 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { Container, Table, Badge, Button, Alert } from 'react-bootstrap';
 import { FiToggleLeft, FiToggleRight } from 'react-icons/fi';
-
-const fetchUsers = async ({ page }) => {
-  const { data } = await axios.get('/api/admin/users', {
-    params: { page, limit: 20 }
-  });
-  return data;
-};
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useApi } from '../../contexts/ApiContext.jsx';
+import { fetchAdminUsers, toggleUserActive } from '../../services/apiService';
 
 const AdminUsers = () => {
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
+  const { token } = useAuth();
+  const { apiMode } = useApi();
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) return '';
+    const numericValue = Number(dateValue);
+    const date = (!isNaN(numericValue) && numericValue > 0)
+      ? new Date(numericValue)
+      : new Date(dateValue);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('uk-UA');
+  };
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['admin-users', page],
-    queryFn: () => fetchUsers({ page }),
+    queryKey: ['admin-users', page, apiMode],
+    queryFn: () => fetchAdminUsers({ page, limit: 20 }, apiMode, token),
   });
 
   const toggleMutation = useMutation({
     mutationFn: async (id) => {
-      return axios.patch(`/api/admin/users/${id}/toggle-active`, {});
+      return toggleUserActive(id, apiMode, token);
     },
     onSuccess: () => {
       // Інвалідуємо всі пов'язані запити для автоматичного оновлення
@@ -91,7 +98,7 @@ const AdminUsers = () => {
               </thead>
               <tbody>
                 {data?.data?.users?.map(user => (
-                  <tr key={user._id} style={{ borderColor: '#2d3748', backgroundColor: 'transparent' }}>
+                  <tr key={user._id || user.id} style={{ borderColor: '#2d3748', backgroundColor: 'transparent' }}>
                     <td style={{ color: '#e2e8f0', fontWeight: 500, fontSize: '14px', padding: '12px' }}>
                       {user.firstName} {user.lastName}
                     </td>
@@ -114,13 +121,13 @@ const AdminUsers = () => {
                       </Badge>
                     </td>
                     <td style={{ color: '#94a3b8', fontSize: '13px', padding: '12px' }}>
-                      {new Date(user.createdAt).toLocaleDateString('uk-UA')}
+                      {formatDate(user.createdAt)}
                     </td>
                     <td style={{ padding: '12px' }}>
                       <Button
                         size="sm"
                         variant={user.isActive ? 'warning' : 'success'}
-                        onClick={() => toggleMutation.mutate(user._id)}
+                        onClick={() => toggleMutation.mutate(user._id || user.id)}
                         disabled={toggleMutation.isPending}
                       >
                         {user.isActive ? <FiToggleRight /> : <FiToggleLeft />}

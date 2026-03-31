@@ -1,25 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Alert, Spinner } from 'react-bootstrap';
 import { useParams, Link } from 'react-router-dom';
+import { useApi } from '../contexts/ApiContext.jsx';
+import { verifyEmail as verifyEmailService } from '../services/apiService';
 
 const VerifyEmail = () => {
   const { token } = useParams();
-  const [status, setStatus] = useState('verifying'); // verifying, success, error
+  const { apiMode } = useApi();
+  const [status, setStatus] = useState('verifying');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        const response = await fetch(`/api/auth/verify-email/${token}`);
-        const data = await response.json();
+        const data = await verifyEmailService(token, apiMode);
 
-        if (response.ok && data.success) {
+        if (data.success) {
           setStatus('success');
-          if (data.alreadyVerified) {
-            setMessage('Email підтверджено. Ви можете увійти в систему.');
-          } else {
-            setMessage(data.message || 'Email успішно підтверджено!');
-          }
+          setMessage(data.message || 'Email успішно підтверджено!');
         } else {
           setStatus('error');
           setMessage(data.message || 'Помилка підтвердження email');
@@ -37,7 +35,7 @@ const VerifyEmail = () => {
       setStatus('error');
       setMessage('Невірне посилання підтвердження');
     }
-  }, [token]);
+  }, [token, apiMode]);
 
   return (
     <Container className="py-5">

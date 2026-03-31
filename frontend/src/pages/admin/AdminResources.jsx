@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { Container, Table, Badge, Button, Form, InputGroup, Pagination, Alert, Nav } from 'react-bootstrap';
 import { FiSearch, FiToggleLeft, FiToggleRight, FiTrash2, FiBook, FiClock, FiCheckCircle, FiPlus } from 'react-icons/fi';
 import broadcastSync, { SYNC_EVENTS } from '../../utils/broadcastSync';
-
-const fetchResources = async ({ page, search, status }) => {
-  const { data } = await axios.get('/api/admin/resources', {
-    params: { page, limit: 15, search, status }
-  });
-  return data;
-};
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useApi } from '../../contexts/ApiContext.jsx';
+import { fetchAdminResources, approveResource, toggleResourceActive, deleteResource } from '../../services/apiService';
 
 const AdminResources = () => {
   const navigate = useNavigate();
@@ -19,10 +14,12 @@ const AdminResources = () => {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const queryClient = useQueryClient();
+  const { token } = useAuth();
+  const { apiMode } = useApi();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['admin-resources', page, search, activeTab],
-    queryFn: () => fetchResources({ page, search, status: activeTab }),
+    queryKey: ['admin-resources', page, search, activeTab, apiMode],
+    queryFn: () => fetchAdminResources({ page, limit: 15, search, status: activeTab }, apiMode, token),
     refetchInterval: 30 * 1000, // Автоматично оновлювати кожні 30 секунд
     refetchOnWindowFocus: true, // Оновлювати при переключенні на вкладку
     refetchOnMount: true, // Оновлювати при монтуванні
@@ -66,7 +63,7 @@ const AdminResources = () => {
 
   const toggleMutation = useMutation({
     mutationFn: async (id) => {
-      return axios.patch(`/api/admin/resources/${id}/toggle-active`, {});
+      return toggleResourceActive(id, apiMode, token);
     },
     onSuccess: () => {
       // Інвалідуємо всі пов'язані запити для автоматичного оновлення
@@ -81,7 +78,7 @@ const AdminResources = () => {
 
   const approveMutation = useMutation({
     mutationFn: async (id) => {
-      return axios.patch(`/api/admin/resources/${id}/approve`);
+      return approveResource(id, apiMode, token);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
@@ -94,7 +91,7 @@ const AdminResources = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      return axios.delete(`/api/admin/resources/${id}`);
+      return deleteResource(id, apiMode, token);
     },
     onSuccess: () => {
       // Інвалідуємо всі пов'язані запити для автоматичного оновлення
@@ -257,7 +254,7 @@ const AdminResources = () => {
                 </thead>
                 <tbody>
                   {data?.data?.resources?.map(resource => (
-                    <tr key={resource._id} style={{ borderColor: '#2d3748', backgroundColor: 'transparent' }}>
+                    <tr key={resource._id || resource.id} style={{ borderColor: '#2d3748', backgroundColor: 'transparent' }}>
                       <td style={{ maxWidth: '250px', padding: '12px' }}>
                         <div style={{ 
                           color: '#e2e8f0', 
@@ -266,7 +263,7 @@ const AdminResources = () => {
                           marginBottom: '4px'
                         }}>
                           <a 
-                            href={`/resources/${resource._id}`}
+                            href={`/resources/${resource._id || resource.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ 
@@ -306,7 +303,7 @@ const AdminResources = () => {
                             <Button
                               size="sm"
                               variant="success"
-                              onClick={() => approveMutation.mutate(resource._id)}
+                              onClick={() => approveMutation.mutate(resource._id || resource.id)}
                               disabled={approveMutation.isPending}
                               title="Схвалити ресурс"
                             >
@@ -317,7 +314,7 @@ const AdminResources = () => {
                             <Button
                               size="sm"
                               variant={resource.isActive ? 'warning' : 'success'}
-                              onClick={() => toggleMutation.mutate(resource._id)}
+                              onClick={() => toggleMutation.mutate(resource._id || resource.id)}
                               disabled={toggleMutation.isPending}
                               title={resource.isActive ? 'Деактивувати' : 'Активувати'}
                             >
@@ -329,11 +326,11 @@ const AdminResources = () => {
                             variant="outline-danger"
                             onClick={() => {
                               if (window.confirm('Видалити ресурс назавжди?')) {
-                                deleteMutation.mutate(resource._id);
+                                deleteMutation.mutate(resource._id || resource.id);
                               }
                             }}
                             disabled={deleteMutation.isPending}
-                            title="Видалити"
+                            title="Видалити ресурс"
                           >
                             <FiTrash2 />
                           </Button>

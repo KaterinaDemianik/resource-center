@@ -6,7 +6,8 @@ const Resource = require('../models/Resource');
 const { sendVerificationEmail } = require('../utils/email');
 const {
   buildPublicResourceQuery,
-  buildAdminResourceStatusQuery
+  buildAdminResourceStatusQuery,
+  mergeAdminQueryWithSearch
 } = require('../services/resourceService');
 
 /**
@@ -106,9 +107,8 @@ const resolvers = {
    */
   resource: async ({ id }) => {
     try {
-      // Валідація ID
       if (!id) {
-        return formatResponse(false, null, 'ID ресурсу є обов\'язковим');
+        return { success: false, message: 'ID ресурсу є обов\'язковим', resource: null };
       }
 
       const resource = await Resource.findById(id)
@@ -116,17 +116,23 @@ const resolvers = {
         .populate('approvedBy', 'firstName lastName');
 
       if (!resource) {
-        return formatResponse(false, null, 'Ресурс не знайдено');
+        return { success: false, message: 'Ресурс не знайдено', resource: null };
       }
 
       // Інкремент кількості переглядів
       resource.views = (resource.views || 0) + 1;
       await resource.save();
 
-      return formatResponse(true, { resource }, null);
+      const resourceObj = resource.toObject({ virtuals: true });
+      resourceObj.id = resource._id.toString();
+      resourceObj.createdAt = resource.createdAt?.toISOString() || null;
+      resourceObj.updatedAt = resource.updatedAt?.toISOString() || null;
+      if (resource.approvedAt) resourceObj.approvedAt = resource.approvedAt.toISOString();
+
+      return { success: true, message: '', resource: resourceObj };
     } catch (error) {
       console.error('GraphQL resource error:', error);
-      return formatResponse(false, null, 'Помилка завантаження ресурсу');
+      return { success: false, message: 'Помилка завантаження ресурсу', resource: null };
     }
   },
 
@@ -154,10 +160,18 @@ const resolvers = {
         .limit(limit);
 
       const total = await Resource.countDocuments({ author: user.userId });
+      const normalizedResources = resources.map((resource) => {
+        const resourceObj = resource.toObject({ virtuals: true });
+        resourceObj.id = resource._id.toString();
+        resourceObj.createdAt = resource.createdAt?.toISOString() || null;
+        resourceObj.updatedAt = resource.updatedAt?.toISOString() || null;
+        resourceObj.approvedAt = resource.approvedAt?.toISOString() || null;
+        return resourceObj;
+      });
 
       return {
         success: true,
-        resources,
+        resources: normalizedResources,
         total,
         page,
         pages: Math.ceil(total / limit)
@@ -169,15 +183,17 @@ const resolvers = {
     }
   },
 
-  adminResources: async ({ status, page = 1, limit = 10 }, context) => {
+  adminResources: async ({ status, search, page = 1, limit = 10 }, context) => {
     try {
       checkAdmin(context);
       const skip = (page - 1) * limit;
 
-      const query =
-        status && ['pending', 'approved', 'inactive', 'rejected'].includes(status)
-          ? buildAdminResourceStatusQuery(status)
+      const normalizedStatus = status === 'all' ? 'approved' : status;
+      const baseQuery =
+        normalizedStatus && ['pending', 'approved', 'inactive', 'rejected'].includes(normalizedStatus)
+          ? buildAdminResourceStatusQuery(normalizedStatus)
           : {};
+      const query = mergeAdminQueryWithSearch(baseQuery, search);
 
       const resources = await Resource.find(query)
         .populate('author', 'firstName lastName email')
@@ -187,10 +203,18 @@ const resolvers = {
         .limit(limit);
 
       const total = await Resource.countDocuments(query);
+      const normalizedResources = resources.map((resource) => {
+        const resourceObj = resource.toObject({ virtuals: true });
+        resourceObj.id = resource._id.toString();
+        resourceObj.createdAt = resource.createdAt?.toISOString() || null;
+        resourceObj.updatedAt = resource.updatedAt?.toISOString() || null;
+        resourceObj.approvedAt = resource.approvedAt?.toISOString() || null;
+        return resourceObj;
+      });
 
       return {
         success: true,
-        resources,
+        resources: normalizedResources,
         total,
         page,
         pages: Math.ceil(total / limit)
@@ -227,8 +251,15 @@ const resolvers = {
         .limit(limit);
 
       const total = await User.countDocuments(query);
+      const normalizedUsers = users.map((user) => {
+        const userObj = user.toObject({ virtuals: true });
+        userObj.id = user._id.toString();
+        userObj.createdAt = user.createdAt?.toISOString() || null;
+        userObj.updatedAt = user.updatedAt?.toISOString() || null;
+        return userObj;
+      });
 
-      return { success: true, users, total };
+      return { success: true, users: normalizedUsers, total };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
       console.error('GraphQL adminUsers error:', error);
@@ -240,13 +271,16 @@ const resolvers = {
     try {
       checkAdmin(context);
 
+      const approvedQuery = buildAdminResourceStatusQuery('approved');
+      const pendingQuery = buildAdminResourceStatusQuery('pending');
+
       const [totalUsers, activeUsers, totalResources, approvedResources, pendingResources] = 
         await Promise.all([
           User.countDocuments(),
           User.countDocuments({ isActive: true, emailVerified: true }),
           Resource.countDocuments(),
-          Resource.countDocuments({ isApproved: true, isActive: true }),
-          Resource.countDocuments({ isApproved: false, isActive: true })
+          Resource.countDocuments(approvedQuery),
+          Resource.countDocuments(pendingQuery)
         ]);
 
       return {
@@ -431,26 +465,24 @@ const resolvers = {
       const { title, description, category, url, tags } = input;
       
       if (!title || !description || !category || !url) {
-        return formatResponse(false, null, 'Назва, опис, категорія та URL є обов\'язковими полями');
+        return { success: false, message: 'Назва, опис, категорія та URL є обов\'язковими полями', resource: null };
       }
 
-      // Валідація довжини полів
       if (title.length > 200) {
-        return formatResponse(false, null, 'Назва не може перевищувати 200 символів');
+        return { success: false, message: 'Назва не може перевищувати 200 символів', resource: null };
       }
 
       if (description.length > 2000) {
-        return formatResponse(false, null, 'Опис не може перевищувати 2000 символів');
+        return { success: false, message: 'Опис не може перевищувати 2000 символів', resource: null };
       }
 
       if (url.length > 500) {
-        return formatResponse(false, null, 'URL не може перевищувати 500 символів');
+        return { success: false, message: 'URL не може перевищувати 500 символів', resource: null };
       }
 
-      // Валідація категорії
       const validCategories = ['education', 'technology', 'health', 'business', 'entertainment', 'other'];
       if (!validCategories.includes(category)) {
-        return formatResponse(false, null, 'Невірна категорія');
+        return { success: false, message: 'Невірна категорія', resource: null };
       }
 
       // Створення нового ресурсу
@@ -472,13 +504,11 @@ const resolvers = {
       // Отримання ресурсу з даними автора
       await resource.populate('author', 'firstName lastName');
 
-      return formatResponse(true, { 
-        resource 
-      }, 'Ресурс створено. Очікує модерації.');
+      return { success: true, message: 'Ресурс створено. Очікує модерації.', resource };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
       console.error('GraphQL createResource error:', error);
-      return formatResponse(false, null, 'Помилка створення ресурсу');
+      return { success: false, message: 'Помилка створення ресурсу', resource: null };
     }
   },
 
@@ -554,8 +584,10 @@ const resolvers = {
       }
 
       resource.isApproved = true;
+      resource.isActive = true;
       resource.approvedBy = user.userId;
       resource.approvedAt = new Date();
+      resource.rejectedAt = null;
       await resource.save();
 
       await resource.populate(['author', 'approvedBy']);

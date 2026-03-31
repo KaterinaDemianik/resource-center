@@ -242,6 +242,22 @@ export const fetchCurrentUser = async (apiMode, token) => {
   }
 }
 
+/**
+ * Верифікація email
+ */
+export const verifyEmail = async (token, apiMode) => {
+  if (apiMode === 'graphql') {
+    const data = await graphqlRequest(authQueries.verifyEmail, { token })
+    return {
+      success: data.verifyEmail.success,
+      message: data.verifyEmail.message
+    }
+  } else {
+    const response = await axios.get(`/api/auth/verify-email/${token}`)
+    return response.data
+  }
+}
+
 // ==================== АДМІНІСТРУВАННЯ ====================
 
 /**
@@ -253,6 +269,7 @@ export const fetchAdminResources = async (params, apiMode, token) => {
       adminQueries.getAdminResources,
       {
         status: params.status || null,
+        search: params.search || null,
         page: params.page,
         limit: params.limit
       },

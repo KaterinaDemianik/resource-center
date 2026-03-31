@@ -126,7 +126,7 @@ const schema = buildSchema(`
     myResources(page: Int, limit: Int): ResourcesPayload!
     
     # Admin queries
-    adminResources(status: String, page: Int, limit: Int): ResourcesPayload!
+    adminResources(status: String, search: String, page: Int, limit: Int): ResourcesPayload!
     adminUsers(status: String, page: Int, limit: Int): UsersPayload!
     adminStats: StatsPayload!
   }

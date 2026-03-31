@@ -166,6 +166,8 @@ const ResourcesWithApi = () => {
             pagination={data?.data?.pagination}
             currentPage={currentPage}
             onPageChange={setCurrentPage}
+            layout="grid"
+            categories={categories}
           />
         </Tab>
         {token && (
@@ -179,6 +181,9 @@ const ResourcesWithApi = () => {
               currentPage={currentPage}
               onPageChange={setCurrentPage}
               showEdit={true}
+              activeTab="my"
+              layout="grid"
+              categories={categories}
             />
           </Tab>
         )}

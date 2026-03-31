@@ -2,18 +2,22 @@ import React, { useState } from 'react'
 import { Container, Card, Alert } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { toast } from 'react-toastify'
 import ResourceForm from '../../components/resources/ResourceForm'
 import broadcastSync, { SYNC_EVENTS } from '../../utils/broadcastSync'
+import { useAuth } from '../../contexts/AuthContext.jsx'
+import { useApi } from '../../contexts/ApiContext.jsx'
+import { createResource } from '../../services/apiService'
 
 const AdminCreateResource = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { token } = useAuth()
+  const { apiMode } = useApi()
   const [error, setError] = useState('')
 
   const createMutation = useMutation({
-    mutationFn: async (payload) => axios.post('/api/resources', payload),
+    mutationFn: async (payload) => createResource(payload, apiMode, token),
     onSuccess: () => {
       toast.success('Ресурс успішно створено')
       queryClient.invalidateQueries({ queryKey: ['resources'] })

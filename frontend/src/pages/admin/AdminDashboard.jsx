@@ -1,19 +1,18 @@
 import React from 'react'
 import { Card } from 'react-bootstrap'
 import { useQuery } from '@tanstack/react-query'
-import axios from 'axios'
 import { FiUsers, FiBook } from 'react-icons/fi'
+import { useAuth } from '../../contexts/AuthContext.jsx'
+import { useApi } from '../../contexts/ApiContext.jsx'
+import { fetchAdminStats } from '../../services/apiService'
 
 const AdminDashboard = () => {
-  // Fetch admin statistics
-  const fetchStats = async () => {
-    const response = await axios.get('/api/admin/stats')
-    return response.data
-  }
+  const { token } = useAuth()
+  const { apiMode } = useApi()
 
   const { data: statsData, isLoading: statsLoading } = useQuery({
-    queryKey: ['adminStats'],
-    queryFn: fetchStats,
+    queryKey: ['adminStats', apiMode],
+    queryFn: () => fetchAdminStats(apiMode, token),
     refetchInterval: 30 * 1000, // Автоматично оновлювати кожні 30 секунд
     refetchOnWindowFocus: true, // Оновлювати при переключенні на вкладку
     refetchOnMount: true,

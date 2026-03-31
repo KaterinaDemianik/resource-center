@@ -344,6 +344,10 @@ router.patch('/users/:id/toggle-active', adminAuth, async (req, res) => {
 // Get dashboard statistics
 router.get('/stats', adminAuth, async (req, res) => {
   try {
+    const approvedQuery = buildAdminResourceStatusQuery('approved');
+    const pendingQuery = buildAdminResourceStatusQuery('pending');
+    const inactiveQuery = buildAdminResourceStatusQuery('inactive');
+
     const [
       totalUsers,
       activeUsers,
@@ -357,9 +361,9 @@ router.get('/stats', adminAuth, async (req, res) => {
       User.countDocuments({ isActive: true, emailVerified: true }),
       User.countDocuments({ emailVerified: false }),
       Resource.countDocuments(),
-      Resource.countDocuments({ isApproved: true, isActive: true }),
-      Resource.countDocuments({ isApproved: false, rejectedAt: null }),
-      Resource.countDocuments({ isActive: false, isApproved: true })
+      Resource.countDocuments(approvedQuery),
+      Resource.countDocuments(pendingQuery),
+      Resource.countDocuments(inactiveQuery)
     ]);
 
     // Get recent activity (last 7 days)

@@ -2,27 +2,25 @@ import React from 'react'
 import { Container, Row, Col, Card, Badge, Button, Spinner, Alert } from 'react-bootstrap'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import axios from 'axios'
-import { FiArrowLeft, FiExternalLink, FiUser, FiCalendar, FiEye, FiTag, FiEdit } from 'react-icons/fi'
+import { FiArrowLeft, FiExternalLink, FiUser, FiCalendar, FiEye, FiTag } from 'react-icons/fi'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useApi } from '../contexts/ApiContext.jsx'
+import { fetchResource } from '../services/apiService'
 
 const ResourceDetail = () => {
   const { id } = useParams()
-  const { user } = useAuth()
-
-  const fetchResource = async () => {
-    const response = await axios.get(`/api/resources/${id}`)
-    return response.data
-  }
+  const { user, token } = useAuth()
+  const { apiMode } = useApi()
 
   const fetchSimilarResources = async () => {
+    const axios = (await import('axios')).default
     const response = await axios.get(`/api/resources/${id}/similar`)
     return response.data
   }
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['resource', id],
-    queryFn: fetchResource,
+    queryKey: ['resource', id, apiMode],
+    queryFn: () => fetchResource(id, apiMode, token),
     enabled: !!id,
   })
 
@@ -53,8 +51,14 @@ const ResourceDetail = () => {
     other: 'Інше'
   }
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('uk-UA', {
+  const formatDate = (dateValue) => {
+    if (!dateValue) return ''
+    const numericValue = Number(dateValue)
+    const date = (!isNaN(numericValue) && numericValue > 0)
+      ? new Date(numericValue)
+      : new Date(dateValue)
+    if (isNaN(date.getTime())) return ''
+    return date.toLocaleDateString('uk-UA', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -92,12 +96,6 @@ const ResourceDetail = () => {
 
   const resource = data?.data
 
-  const authorId = resource?.author?._id?.toString?.() || resource?.author?.toString?.()
-  const canEdit =
-    user &&
-    authorId &&
-    (user.id === authorId || user.role === 'admin')
-
   if (!resource) {
     return (
       <Container className="py-5">
@@ -120,26 +118,17 @@ const ResourceDetail = () => {
       <Row>
         <Col>
           {/* Back Button */}
-          <div className="d-flex flex-wrap gap-2 mb-4 align-items-center">
-            <Link to="/resources" className="text-decoration-none">
-              <Button variant="outline-secondary" size="sm">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <Link to="/resources">
+              <Button variant="outline-light" size="sm">
                 <FiArrowLeft className="me-2" />
                 Назад до ресурсів
               </Button>
             </Link>
-            {canEdit && (
-              <Link to={`/edit-resource/${resource._id}`} className="text-decoration-none">
-                <Button variant="outline-primary" size="sm">
-                  <FiEdit className="me-2" />
-                  Редагувати
-                </Button>
-              </Link>
-            )}
           </div>
 
-          {/* Main Resource Card */}
-          <Card className="shadow-sm">
-            <Card.Body className="p-4">
+          <Card className="resource-detail-card">
+            <Card.Body className="p-4 p-md-5">
               {/* Header */}
               <div className="mb-4">
                 <div className="mb-3">

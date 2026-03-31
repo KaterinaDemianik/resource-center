@@ -2,22 +2,23 @@ import React from 'react'
 import { Container, Card, Alert } from 'react-bootstrap'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import ResourceForm from '../components/resources/ResourceForm'
 import broadcastSync, { SYNC_EVENTS } from '../utils/broadcastSync'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import { useApi } from '../contexts/ApiContext.jsx'
+import { fetchResource, updateResource } from '../services/apiService'
 
 const EditResource = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { token } = useAuth()
+  const { apiMode } = useApi()
   const [error, setError] = React.useState('')
 
   const { data, isLoading, error: loadError } = useQuery({
-    queryKey: ['resource', id],
-    queryFn: async () => {
-      const res = await axios.get(`/api/resources/${id}`)
-      return res.data
-    },
+    queryKey: ['resource', id, apiMode],
+    queryFn: () => fetchResource(id, apiMode, token),
     enabled: !!id
   })
 
@@ -25,7 +26,7 @@ const EditResource = () => {
 
   const updateMutation = useMutation({
     mutationFn: async (payload) => {
-      return axios.put(`/api/resources/${id}`, payload)
+      return updateResource(id, payload, apiMode, token)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] })

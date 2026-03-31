@@ -37,15 +37,39 @@ const ResourceCard = ({
 }) => {
   const navigate = useNavigate()
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('uk-UA')
+  const formatDate = (dateValue) => {
+    if (!dateValue) return ''
+    const numericValue = Number(dateValue)
+    const date = (!isNaN(numericValue) && numericValue > 0)
+      ? new Date(numericValue)
+      : new Date(dateValue)
+    if (isNaN(date.getTime())) return ''
+    return date.toLocaleDateString('uk-UA')
   }
 
   if (layout === 'grid') {
     const goDetail = (e) => {
       if (e.target.closest('button, a')) return
-      navigate(`/resources/${resource._id}`)
+      navigate(`/resources/${resource._id || resource.id}`)
     }
+
+    const statusBadge = activeTab === 'my'
+      ? !resource.isApproved
+        ? {
+            text: 'На модерації',
+            style: {
+              backgroundColor: '#f59e0b',
+              color: '#111827'
+            }
+          }
+        : {
+            text: 'Схвалено',
+            style: {
+              backgroundColor: '#8b5cf6',
+              color: '#ffffff'
+            }
+          }
+      : null
 
     const cardInner = (
       <Card
@@ -62,8 +86,24 @@ const ResourceCard = ({
           cursor: 'pointer'
         }}
       >
-        <Card.Body className="d-flex flex-column">
-          <div className="mb-2 d-flex gap-2 flex-wrap">
+        <Card.Body className="d-flex flex-column" style={{ position: 'relative' }}>
+          {statusBadge && (
+            <Badge
+              style={{
+                fontSize: '11px',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                zIndex: 1,
+                ...statusBadge.style
+              }}
+            >
+              {statusBadge.text}
+            </Badge>
+          )}
+          <div className="mb-2 d-flex align-items-start gap-2" style={{ paddingRight: statusBadge ? '120px' : '0' }}>
             <Badge
               bg={getCategoryBadgeVariant(resource.category)}
               className="category-badge"
@@ -75,16 +115,6 @@ const ResourceCard = ({
             >
               {categories.find(c => c.value === resource.category)?.label || resource.category}
             </Badge>
-            {activeTab === 'my' && !resource.isApproved && (
-              <Badge bg="warning" style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '20px' }}>
-                На модерації
-              </Badge>
-            )}
-            {activeTab === 'my' && resource.isApproved && (
-              <Badge bg="success" style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '20px' }}>
-                Схвалено
-              </Badge>
-            )}
           </div>
 
           <Card.Title
@@ -153,7 +183,7 @@ const ResourceCard = ({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    navigate(`/edit-resource/${resource._id}`)
+                    navigate(`/edit-resource/${resource._id || resource.id}`)
                   }}
                   className="flex-grow-1"
                 >
@@ -166,7 +196,7 @@ const ResourceCard = ({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    onDeleteResource?.(resource._id)
+                    onDeleteResource?.(resource._id || resource.id)
                   }}
                 >
                   <FiTrash2 />
