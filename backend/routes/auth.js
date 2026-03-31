@@ -206,10 +206,8 @@ router.get('/verify-email/:token', async (req, res) => {
     }
 
     // Verify user but keep the token (don't set to null)
-    // This allows the link to work multiple times
     user.emailVerified = true;
     user.isActive = true;
-    // user.emailVerificationToken = null; // Не видаляємо токен
     await user.save();
 
     res.json({

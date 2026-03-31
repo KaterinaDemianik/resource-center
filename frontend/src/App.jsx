@@ -10,7 +10,7 @@ import ApiToggle from './components/ApiToggle'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import VerifyEmail from './pages/VerifyEmail'
-import Resources from './pages/Resources'
+import ResourcesWithApi from './pages/ResourcesWithApi'
 import ResourceDetail from './pages/ResourceDetail'
 import Profile from './pages/Profile'
 import CreateResource from './pages/CreateResource'
@@ -327,7 +327,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
-          <Route path="/resources" element={<Resources />} />
+          <Route path="/resources" element={<ResourcesWithApi />} />
           <Route path="/resources/:id" element={<ResourceDetail />} />
           <Route
             path="/create-resource"

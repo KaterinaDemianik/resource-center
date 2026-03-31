@@ -2,14 +2,16 @@ import React, { useState } from 'react'
 import { Container, Card, Form, Button, Alert } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { FiPlus, FiTrash2 } from 'react-icons/fi'
 import broadcastSync, { SYNC_EVENTS } from '../utils/broadcastSync'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useApi } from '../contexts/ApiContext.jsx'
+import { createResource } from '../services/apiService'
 
 const CreateResource = () => {
   const navigate = useNavigate()
   const { token } = useAuth()
+  const { apiMode } = useApi()
   const queryClient = useQueryClient()
   const [resource, setResource] = useState({
     title: '',
@@ -25,8 +27,7 @@ const CreateResource = () => {
       if (!token) {
         throw new Error('Необхідна авторизація')
       }
-
-      return axios.post('/api/resources', resourceData)
+      return createResource(resourceData, apiMode, token)
     },
     onSuccess: () => {
       // Автоматично оновлюємо всі пов'язані запити
