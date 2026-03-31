@@ -190,7 +190,6 @@ router.get('/verify-email/:token', async (req, res) => {
     const user = await User.findOne({ emailVerificationToken: token });
     
     if (!user) {
-      // Token not found - could be invalid or already used
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired verification token'
@@ -206,9 +205,11 @@ router.get('/verify-email/:token', async (req, res) => {
       });
     }
 
+    // Verify user but keep the token (don't set to null)
+    // This allows the link to work multiple times
     user.emailVerified = true;
     user.isActive = true;
-    user.emailVerificationToken = null;
+    // user.emailVerificationToken = null; // Не видаляємо токен
     await user.save();
 
     res.json({
@@ -426,7 +427,7 @@ router.post('/change-password', auth, [
 
     const { currentPassword, newPassword } = req.body;
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -462,7 +463,7 @@ router.post('/change-password', auth, [
 // Delete account
 router.delete('/delete-account', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -470,7 +471,7 @@ router.delete('/delete-account', auth, async (req, res) => {
       });
     }
 
-    await User.findByIdAndDelete(req.user.id);
+    await User.findByIdAndDelete(req.user.userId);
 
     res.json({
       success: true,
@@ -486,8 +487,14 @@ router.delete('/delete-account', auth, async (req, res) => {
   }
 });
 
-// ТІЛЬКИ ДЛЯ РОЗРОБКИ - видалити після тестування
+// ТІЛЬКИ ДЛЯ РОЗРОБКИ — заборонено в production
 router.post('/make-admin', auth, async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden'
+    });
+  }
   try {
     const user = await User.findByIdAndUpdate(
       req.user.userId,

@@ -16,7 +16,7 @@ const VerifyEmail = () => {
         if (response.ok && data.success) {
           setStatus('success');
           if (data.alreadyVerified) {
-            setMessage('Email вже підтверджено раніше. Ви можете увійти в систему.');
+            setMessage('Email підтверджено. Ви можете увійти в систему.');
           } else {
             setMessage(data.message || 'Email успішно підтверджено!');
           }
@@ -69,7 +69,7 @@ const VerifyEmail = () => {
                     {message}
                   </Alert>
                   <p className="text-muted mb-4">
-                    Ваш обліковий запис активовано. Тепер ви можете увійти в систему.
+                    Ваш обліковий запис активовано.
                   </p>
                   <Link to="/login" className="btn btn-primary btn-lg">
                     Перейти до входу
