@@ -88,6 +88,9 @@ const ResourceForm = ({
         <Form.Control.Feedback type="invalid">
           {errors.title?.message}
         </Form.Control.Feedback>
+        <Form.Text className="text-muted">
+          Максимум 200 символів
+        </Form.Text>
       </Form.Group>
 
       {/* Description */}
@@ -99,6 +102,10 @@ const ResourceForm = ({
           placeholder="Детальний опис ресурсу"
           {...register('description', {
             required: 'Опис обов\'язковий',
+            minLength: {
+              value: 2,
+              message: 'Опис має містити мінімум 2 символи'
+            },
             maxLength: {
               value: 1000,
               message: 'Опис не може перевищувати 1000 символів'
@@ -110,7 +117,7 @@ const ResourceForm = ({
           {errors.description?.message}
         </Form.Control.Feedback>
         <Form.Text className="text-muted">
-          Максимум 1000 символів
+          Мінімум 2 символи, максимум 1000 символів
         </Form.Text>
       </Form.Group>
 

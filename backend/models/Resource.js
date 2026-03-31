@@ -33,9 +33,9 @@ const resourceSchema = new mongoose.Schema({
     maxlength: [2000, 'Description cannot exceed 2000 characters'],
     validate: {
       validator: function(v) {
-        return v && v.trim().length > 10;
+        return v && v.trim().length >= 2;
       },
-      message: 'Description must be at least 10 characters long'
+      message: 'Description must be at least 2 characters long'
     }
   },
   category: {

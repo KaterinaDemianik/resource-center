@@ -79,6 +79,19 @@ const AdminResources = () => {
     },
   });
 
+  const approveMutation = useMutation({
+    mutationFn: async (id) => {
+      return axios.patch(`/api/admin/resources/${id}/approve`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-resources'] });
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ['userResources'] });
+      broadcastSync.broadcast(SYNC_EVENTS.RESOURCE_APPROVED, {});
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       return axios.delete(`/api/admin/resources/${id}`);
@@ -237,7 +250,6 @@ const AdminResources = () => {
                     <th style={{ padding: '12px' }}>Назва</th>
                     <th style={{ padding: '12px' }}>Категорія</th>
                     <th style={{ padding: '12px' }}>Автор</th>
-                    <th style={{ padding: '12px' }}>Схвалено</th>
                     <th style={{ padding: '12px' }}>Статус</th>
                     <th style={{ padding: '12px' }}>Дата</th>
                     <th style={{ padding: '12px' }}>Дії</th>
@@ -253,7 +265,20 @@ const AdminResources = () => {
                           fontSize: '14px',
                           marginBottom: '4px'
                         }}>
-                          {resource.title}
+                          <a 
+                            href={`/resources/${resource._id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ 
+                              color: '#7c3aed', 
+                              textDecoration: 'none',
+                              cursor: 'pointer'
+                            }}
+                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                          >
+                            {resource.title}
+                          </a>
                         </div>
                         <small style={{ color: '#64748b', fontSize: '12px' }}>
                           {resource.description?.substring(0, 60)}...
@@ -269,12 +294,7 @@ const AdminResources = () => {
                       </td>
                       <td>
                         <Badge bg={resource.isApproved ? 'success' : 'warning'}>
-                          {resource.isApproved ? 'Так' : 'Ні'}
-                        </Badge>
-                      </td>
-                      <td>
-                        <Badge bg={resource.isActive ? 'success' : 'danger'}>
-                          {resource.isActive ? 'Активний' : 'Неактивний'}
+                          {resource.isApproved ? 'Схвалено' : 'На модерації'}
                         </Badge>
                       </td>
                       <td style={{ color: '#94a3b8', fontSize: '13px', padding: '12px' }}>
@@ -282,14 +302,28 @@ const AdminResources = () => {
                       </td>
                       <td style={{ padding: '12px' }}>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <Button
-                            size="sm"
-                            variant={resource.isActive ? 'warning' : 'success'}
-                            onClick={() => toggleMutation.mutate(resource._id)}
-                            disabled={toggleMutation.isPending}
-                          >
-                            {resource.isActive ? <FiToggleRight /> : <FiToggleLeft />}
-                          </Button>
+                          {!resource.isApproved && (
+                            <Button
+                              size="sm"
+                              variant="success"
+                              onClick={() => approveMutation.mutate(resource._id)}
+                              disabled={approveMutation.isPending}
+                              title="Схвалити ресурс"
+                            >
+                              <FiCheckCircle />
+                            </Button>
+                          )}
+                          {resource.isApproved && (
+                            <Button
+                              size="sm"
+                              variant={resource.isActive ? 'warning' : 'success'}
+                              onClick={() => toggleMutation.mutate(resource._id)}
+                              disabled={toggleMutation.isPending}
+                              title={resource.isActive ? 'Деактивувати' : 'Активувати'}
+                            >
+                              {resource.isActive ? <FiToggleRight /> : <FiToggleLeft />}
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="outline-danger"
@@ -299,6 +333,7 @@ const AdminResources = () => {
                               }
                             }}
                             disabled={deleteMutation.isPending}
+                            title="Видалити"
                           >
                             <FiTrash2 />
                           </Button>

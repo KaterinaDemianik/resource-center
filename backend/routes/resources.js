@@ -371,4 +371,49 @@ router.get('/user/my-resources', auth, async (req, res) => {
   }
 });
 
+/**
+ * Отримує схожі ресурси на основі категорії та тегів
+ */
+router.get('/:id/similar', async (req, res) => {
+  try {
+    const currentResource = await Resource.findById(req.params.id);
+    
+    if (!currentResource) {
+      return res.status(404).json({
+        success: false,
+        message: 'Resource not found'
+      });
+    }
+
+    // Шукаємо схожі ресурси за категорією та тегами
+    const similarResources = await Resource.find({
+      _id: { $ne: req.params.id }, // Виключаємо поточний ресурс
+      isActive: true,
+      isApproved: true,
+      $or: [
+        { category: currentResource.category }, // Та сама категорія
+        { tags: { $in: currentResource.tags } } // Спільні теги
+      ]
+    })
+      .populate('author', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .limit(6); // Максимум 6 схожих ресурсів
+
+    res.json({
+      success: true,
+      data: {
+        resources: similarResources,
+        total: similarResources.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Get similar resources error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching similar resources'
+    });
+  }
+});
+
 module.exports = router;

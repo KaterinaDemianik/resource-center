@@ -46,7 +46,7 @@ router.get('/resources', adminAuth, [
     const skip = (page - 1) * limit;
     
     // Побудова запиту з фільтром по статусу та опціональним пошуком
-    const status = req.query.status === 'all' ? null : req.query.status;
+    const status = req.query.status === 'all' ? 'approved' : req.query.status;
     const baseQuery = buildAdminResourceStatusQuery(status);
     const mongoQuery = mergeAdminQueryWithSearch(baseQuery, req.query.search);
 

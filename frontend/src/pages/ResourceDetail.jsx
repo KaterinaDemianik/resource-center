@@ -15,9 +15,20 @@ const ResourceDetail = () => {
     return response.data
   }
 
+  const fetchSimilarResources = async () => {
+    const response = await axios.get(`/api/resources/${id}/similar`)
+    return response.data
+  }
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['resource', id],
     queryFn: fetchResource,
+    enabled: !!id,
+  })
+
+  const { data: similarData, isLoading: similarLoading } = useQuery({
+    queryKey: ['similar-resources', id],
+    queryFn: fetchSimilarResources,
     enabled: !!id,
   })
 
@@ -246,10 +257,50 @@ const ResourceDetail = () => {
 
           {/* Related Resources Section */}
           <div className="mt-5">
-            <h4>Схожі ресурси</h4>
-            <p className="text-muted">
-              Функція пошуку схожих ресурсів буде додана в наступних версіях.
-            </p>
+            <h4 className="mb-4">Схожі ресурси</h4>
+            {similarLoading ? (
+              <div className="text-center py-4">
+                <Spinner animation="border" size="sm" />
+              </div>
+            ) : similarData?.data?.resources?.length > 0 ? (
+              <Row>
+                {similarData.data.resources.map((similarResource) => (
+                  <Col key={similarResource._id} md={6} lg={4} className="mb-4">
+                    <Card className="h-100 shadow-sm hover-shadow">
+                      <Card.Body>
+                        <Badge 
+                          bg={getCategoryBadgeVariant(similarResource.category)}
+                          className="mb-2"
+                        >
+                          {categories[similarResource.category] || similarResource.category}
+                        </Badge>
+                        <Card.Title className="h6">
+                          <Link 
+                            to={`/resources/${similarResource._id}`}
+                            className="text-decoration-none"
+                            style={{ color: '#e2e8f0' }}
+                          >
+                            {similarResource.title}
+                          </Link>
+                        </Card.Title>
+                        <Card.Text className="text-muted small">
+                          {similarResource.description?.substring(0, 100)}
+                          {similarResource.description?.length > 100 ? '...' : ''}
+                        </Card.Text>
+                        <div className="text-muted small">
+                          <FiUser className="me-1" />
+                          {similarResource.author?.firstName} {similarResource.author?.lastName}
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            ) : (
+              <p className="text-muted">
+                Схожих ресурсів не знайдено.
+              </p>
+            )}
           </div>
         </Col>
       </Row>

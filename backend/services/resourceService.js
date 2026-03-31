@@ -27,9 +27,9 @@ const buildPublicResourceQuery = (queryParams) => {
  */
 const buildAdminResourceStatusQuery = (status) => {
   const statusQueries = {
-    pending: { isApproved: false, rejectedAt: null },
-    approved: { isApproved: true, isActive: true },
-    inactive: { isActive: false, isApproved: true },
+    pending: { isApproved: false },
+    approved: { isApproved: true },
+    inactive: { isActive: false },
     rejected: { rejectedAt: { $ne: null } }
   };
 
