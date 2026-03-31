@@ -1,106 +1,204 @@
 import React from 'react'
-import { Card, Badge } from 'react-bootstrap'
-import { Link } from 'react-router-dom'
-import { FiEye, FiCalendar, FiUser, FiExternalLink } from 'react-icons/fi'
+import { Card, Badge, Button } from 'react-bootstrap'
+import { Link, useNavigate } from 'react-router-dom'
+import { FiEye, FiCalendar, FiUser, FiEdit, FiTrash2 } from 'react-icons/fi'
 
-const ResourceCard = ({ resource }) => {
-  const categories = {
-    education: { label: 'Освіта', variant: 'primary' },
-    technology: { label: 'Технології', variant: 'info' },
-    health: { label: 'Здоров\'я', variant: 'success' },
-    business: { label: 'Бізнес', variant: 'warning' },
-    entertainment: { label: 'Розваги', variant: 'danger' },
-    other: { label: 'Інше', variant: 'secondary' }
+const defaultCategories = [
+  { value: '', label: 'Всі категорії' },
+  { value: 'education', label: 'Освіта' },
+  { value: 'technology', label: 'Технології' },
+  { value: 'health', label: 'Здоров\'я' },
+  { value: 'business', label: 'Бізнес' },
+  { value: 'entertainment', label: 'Розваги' },
+  { value: 'other', label: 'Інше' }
+]
+
+const getCategoryBadgeVariant = (category) => {
+  const variants = {
+    education: 'primary',
+    technology: 'info',
+    health: 'success',
+    business: 'warning',
+    entertainment: 'danger',
+    other: 'secondary'
   }
+  return variants[category] || 'secondary'
+}
 
-  const categoryInfo = categories[resource.category] || categories.other
+/**
+ * @param {'grid'|'default'} layout - grid: dark themed card used on /resources
+ */
+const ResourceCard = ({
+  resource,
+  layout = 'default',
+  activeTab = 'all',
+  onDeleteResource,
+  categories = defaultCategories
+}) => {
+  const navigate = useNavigate()
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('uk-UA', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
+    return new Date(dateString).toLocaleDateString('uk-UA')
   }
 
-  const truncateText = (text, maxLength) => {
-    if (text.length <= maxLength) return text
-    return text.substring(0, maxLength) + '...'
-  }
+  if (layout === 'grid') {
+    const goDetail = (e) => {
+      if (e.target.closest('button, a')) return
+      navigate(`/resources/${resource._id}`)
+    }
 
-  return (
-    <Card className="h-100 resource-card card-hover shadow-sm">
-      <Card.Body className="d-flex flex-column">
-        {/* Category Badge */}
-        <div className="d-flex justify-content-between align-items-start mb-2">
-          <Badge bg={categoryInfo.variant} className="category-badge">
-            {categoryInfo.label}
-          </Badge>
-          {resource.url && (
-            <a 
-              href={resource.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-muted"
-              title="Відкрити посилання"
+    const cardInner = (
+      <Card
+        className="h-100 resource-card card-hover"
+        role="button"
+        tabIndex={0}
+        onClick={goDetail}
+        onKeyDown={(e) => e.key === 'Enter' && goDetail(e)}
+        style={{
+          backgroundColor: '#16213e',
+          border: '1px solid #2d3748',
+          borderRadius: '12px',
+          transition: 'border-color 0.2s, transform 0.2s',
+          cursor: 'pointer'
+        }}
+      >
+        <Card.Body className="d-flex flex-column">
+          <div className="mb-2 d-flex gap-2 flex-wrap">
+            <Badge
+              bg={getCategoryBadgeVariant(resource.category)}
+              className="category-badge"
+              style={{
+                fontSize: '11px',
+                padding: '4px 10px',
+                borderRadius: '20px'
+              }}
             >
-              <FiExternalLink size={16} />
-            </a>
-          )}
-        </div>
-
-        {/* Title */}
-        <Card.Title className="h6 mb-2">
-          <Link 
-            to={`/resources/${resource._id || resource.id}`}
-            className="text-decoration-none text-dark stretched-link"
-          >
-            {truncateText(resource.title, 60)}
-          </Link>
-        </Card.Title>
-
-        {/* Description */}
-        <Card.Text className="text-muted small flex-grow-1 mb-3">
-          {truncateText(resource.description, 120)}
-        </Card.Text>
-
-        {/* Tags */}
-        {resource.tags && resource.tags.length > 0 && (
-          <div className="mb-3">
-            {resource.tags.slice(0, 3).map((tag, index) => (
-              <Badge 
-                key={index} 
-                bg="light" 
-                text="dark" 
-                className="me-1 mb-1 border"
-              >
-                #{tag}
+              {categories.find(c => c.value === resource.category)?.label || resource.category}
+            </Badge>
+            {activeTab === 'my' && !resource.isApproved && (
+              <Badge bg="warning" style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '20px' }}>
+                На модерації
               </Badge>
-            ))}
-            {resource.tags.length > 3 && (
-              <Badge bg="light" text="muted" className="border">
-                +{resource.tags.length - 3}
+            )}
+            {activeTab === 'my' && resource.isApproved && (
+              <Badge bg="success" style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '20px' }}>
+                Схвалено
               </Badge>
             )}
           </div>
-        )}
 
-        {/* Footer Info */}
-        <div className="mt-auto pt-2 border-top">
-          <div className="d-flex justify-content-between align-items-center text-muted small">
-            <span className="d-flex align-items-center">
-              <FiUser className="me-1" size={14} />
-              {resource.author?.firstName} {resource.author?.lastName}
-            </span>
-            <span className="d-flex align-items-center">
-              <FiEye className="me-1" size={14} />
-              {resource.views || 0}
-            </span>
+          <Card.Title
+            className="mb-2"
+            style={{
+              color: '#e2e8f0',
+              fontSize: '15px',
+              fontWeight: 600,
+              lineHeight: 1.4
+            }}
+          >
+            {resource.title}
+          </Card.Title>
+
+          <Card.Text className="text-muted small flex-grow-1">
+            {resource.description.length > 100
+              ? `${resource.description.substring(0, 100)}...`
+              : resource.description}
+          </Card.Text>
+
+          {resource.tags && resource.tags.length > 0 && (
+            <div className="mb-2" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {resource.tags.slice(0, 3).map((tag, index) => (
+                <span
+                  key={index}
+                  style={{
+                    backgroundColor: 'rgba(124,58,237,0.15)',
+                    color: '#a78bfa',
+                    fontSize: '11px',
+                    padding: '2px 8px',
+                    borderRadius: '4px'
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
+              {resource.tags.length > 3 && (
+                <span style={{ color: '#475569', fontSize: '11px' }}>
+                  +{resource.tags.length - 3}
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="mt-auto">
+            <div className="d-flex justify-content-between align-items-center text-muted small">
+              <span>
+                <FiUser className="me-1" />
+                {resource.author?.firstName} {resource.author?.lastName}
+              </span>
+              <span>
+                <FiEye className="me-1" />
+                {resource.views}
+              </span>
+            </div>
+            <div className="text-muted small mt-1">
+              <FiCalendar className="me-1" />
+              {formatDate(resource.createdAt)}
+            </div>
+
+            {activeTab === 'my' && (
+              <div className="d-flex gap-2 mt-3">
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigate(`/edit-resource/${resource._id}`)
+                  }}
+                  className="flex-grow-1"
+                >
+                  <FiEdit className="me-1" />
+                  Редагувати
+                </Button>
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDeleteResource?.(resource._id)
+                  }}
+                >
+                  <FiTrash2 />
+                </Button>
+              </div>
+            )}
           </div>
-          <div className="text-muted small mt-1">
-            <FiCalendar className="me-1" size={12} />
-            {formatDate(resource.createdAt)}
-          </div>
+        </Card.Body>
+      </Card>
+    )
+
+    return cardInner
+  }
+
+  // default (legacy) layout — light card with title link
+  return (
+    <Card className="h-100 resource-card card-hover shadow-sm">
+      <Card.Body className="d-flex flex-column">
+        <Badge bg={getCategoryBadgeVariant(resource.category)} className="mb-2 align-self-start">
+          {categories.find(c => c.value === resource.category)?.label || resource.category}
+        </Badge>
+        <Card.Title className="h6 mb-2">
+          <Link to={`/resources/${resource._id || resource.id}`} className="text-decoration-none">
+            {resource.title}
+          </Link>
+        </Card.Title>
+        <Card.Text className="text-muted small flex-grow-1">
+          {resource.description?.length > 120 ? `${resource.description.substring(0, 120)}...` : resource.description}
+        </Card.Text>
+        <div className="mt-auto text-muted small">
+          <FiUser className="me-1" />
+          {resource.author?.firstName} {resource.author?.lastName}
         </div>
       </Card.Body>
     </Card>

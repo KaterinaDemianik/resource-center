@@ -5,9 +5,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { FiPlus, FiTrash2 } from 'react-icons/fi'
 import broadcastSync, { SYNC_EVENTS } from '../utils/broadcastSync'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 const CreateResource = () => {
   const navigate = useNavigate()
+  const { token } = useAuth()
   const queryClient = useQueryClient()
   const [resource, setResource] = useState({
     title: '',
@@ -20,14 +22,11 @@ const CreateResource = () => {
 
   const createMutation = useMutation({
     mutationFn: async (resourceData) => {
-      const token = localStorage.getItem('token')
       if (!token) {
         throw new Error('Необхідна авторизація')
       }
 
-      return axios.post('/api/resources', resourceData, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      return axios.post('/api/resources', resourceData)
     },
     onSuccess: () => {
       // Автоматично оновлюємо всі пов'язані запити

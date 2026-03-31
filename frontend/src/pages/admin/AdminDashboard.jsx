@@ -7,10 +7,7 @@ import { FiUsers, FiBook } from 'react-icons/fi'
 const AdminDashboard = () => {
   // Fetch admin statistics
   const fetchStats = async () => {
-    const token = localStorage.getItem('token')
-    const response = await axios.get('/api/admin/stats', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const response = await axios.get('/api/admin/stats')
     return response.data
   }
 

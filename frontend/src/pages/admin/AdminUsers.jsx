@@ -5,10 +5,8 @@ import { Container, Table, Badge, Button, Alert } from 'react-bootstrap';
 import { FiToggleLeft, FiToggleRight } from 'react-icons/fi';
 
 const fetchUsers = async ({ page }) => {
-  const token = localStorage.getItem('token');
   const { data } = await axios.get('/api/admin/users', {
-    params: { page, limit: 20 },
-    headers: { Authorization: `Bearer ${token}` }
+    params: { page, limit: 20 }
   });
   return data;
 };
@@ -24,10 +22,7 @@ const AdminUsers = () => {
 
   const toggleMutation = useMutation({
     mutationFn: async (id) => {
-      const token = localStorage.getItem('token');
-      return axios.patch(`/api/admin/users/${id}/toggle-active`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      return axios.patch(`/api/admin/users/${id}/toggle-active`, {});
     },
     onSuccess: () => {
       // Інвалідуємо всі пов'язані запити для автоматичного оновлення

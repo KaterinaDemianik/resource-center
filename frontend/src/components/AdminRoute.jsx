@@ -1,41 +1,29 @@
-import { Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom'
+import { Spinner, Container } from 'react-bootstrap'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 const AdminRoute = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, loading, isAuthenticated } = useAuth()
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '100vh',
-        color: '#e2e8f0'
-      }}>
-        Завантаження...
-      </div>
-    );
+      <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
+        <Spinner animation="border" role="status" variant="light">
+          <span className="visually-hidden">Завантаження...</span>
+        </Spinner>
+      </Container>
+    )
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />
   }
 
   if (user.role !== 'admin') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" replace />
   }
 
-  return children;
-};
+  return children
+}
 
-export default AdminRoute;
+export default AdminRoute

@@ -2,12 +2,16 @@ import React from 'react'
 import { Row, Col, Spinner, Alert, Button } from 'react-bootstrap'
 import ResourceCard from './ResourceCard'
 
-const ResourceList = ({ 
-  resources, 
-  isLoading, 
-  error, 
+const ResourceList = ({
+  resources,
+  isLoading,
+  error,
   onRetry,
-  emptyMessage = 'Ресурси не знайдені'
+  emptyMessage = 'Ресурси не знайдені',
+  layout = 'default',
+  activeTab = 'all',
+  onDeleteResource,
+  categories
 }) => {
   if (isLoading) {
     return (
@@ -46,7 +50,13 @@ const ResourceList = ({
     <Row className="g-4">
       {resources.map((resource) => (
         <Col md={6} xl={4} key={resource._id || resource.id}>
-          <ResourceCard resource={resource} />
+          <ResourceCard
+            resource={resource}
+            layout={layout}
+            activeTab={activeTab}
+            onDeleteResource={onDeleteResource}
+            categories={categories}
+          />
         </Col>
       ))}
     </Row>

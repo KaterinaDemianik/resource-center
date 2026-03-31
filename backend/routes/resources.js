@@ -2,6 +2,10 @@ const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const Resource = require('../models/Resource');
 const { auth } = require('../middleware/auth');
+const {
+  buildPublicResourceQuery,
+  formatPagination
+} = require('../services/resourceService');
 
 const router = express.Router();
 
@@ -16,47 +20,6 @@ const sendValidationErrors = (res, errors) => {
     message: 'Validation errors',
     errors: errors.array()
   });
-};
-
-/**
- * Форматує об'єкт пагінації
- * @param {number} page - Поточна сторінка
- * @param {number} limit - Ліміт елементів
- * @param {number} total - Загальна кількість
- * @returns {Object} - Об'єкт пагінації
- */
-const formatPagination = (page, limit, total) => {
-  const totalPages = Math.ceil(total / limit);
-  return {
-    current: page,
-    pages: totalPages,
-    total,
-    hasNext: page < totalPages,
-    hasPrev: page > 1
-  };
-};
-
-/**
- * Будує MongoDB запит на основі фільтрів
- * @param {Object} queryParams - Параметри запиту
- * @returns {Object} - MongoDB query об'єкт
- */
-const buildResourceQuery = (queryParams) => {
-  let query = { isActive: true, isApproved: true };
-  
-  if (queryParams.category) {
-    query.category = queryParams.category;
-  }
-  
-  if (queryParams.search) {
-    const searchRegex = new RegExp(queryParams.search, 'i');
-    query.$or = [
-      { title: searchRegex },
-      { description: searchRegex }
-    ];
-  }
-  
-  return query;
 };
 
 /**
@@ -80,7 +43,7 @@ router.get('/', [
     const skip = (page - 1) * limit;
     
     // Побудова запиту з фільтрами
-    const query = buildResourceQuery(req.query);
+    const query = buildPublicResourceQuery(req.query);
 
     // Отримання ресурсів з пагінацією
     const [resources, total] = await Promise.all([
@@ -221,12 +184,25 @@ router.post('/', auth, [
       author: req.user.userId
     });
 
+    if (req.user.role === 'admin') {
+      resource.isApproved = true;
+      resource.isActive = true;
+      resource.approvedBy = req.user.userId;
+      resource.approvedAt = new Date();
+      resource.rejectedAt = null;
+    }
+
     await resource.save();
     await resource.populate('author', 'firstName lastName');
+    if (resource.approvedBy) {
+      await resource.populate('approvedBy', 'firstName lastName');
+    }
 
     res.status(201).json({
       success: true,
-      message: 'Resource created successfully. It will be visible after admin approval.',
+      message: req.user.role === 'admin'
+        ? 'Resource created and published successfully.'
+        : 'Resource created successfully. It will be visible after admin approval.',
       data: resource
     });
 
@@ -382,13 +358,7 @@ router.get('/user/my-resources', auth, async (req, res) => {
       success: true,
       data: {
         resources,
-        pagination: {
-          current: page,
-          pages: Math.ceil(total / limit),
-          total,
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
-        }
+        pagination: formatPagination(page, limit, total)
       }
     });
 

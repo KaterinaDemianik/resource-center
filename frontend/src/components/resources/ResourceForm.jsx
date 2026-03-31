@@ -1,18 +1,21 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Form, Button, Row, Col, Badge, Alert } from 'react-bootstrap'
 import { useForm } from 'react-hook-form'
 import { FiPlus, FiX, FiSave } from 'react-icons/fi'
 
-const ResourceForm = ({ 
-  initialData = null, 
-  onSubmit, 
+const ResourceForm = ({
+  initialData = null,
+  onSubmit,
   isLoading = false,
-  submitLabel = 'Зберегти'
+  submitLabel = 'Зберегти',
+  mode = 'create',
+  /** Якщо true — не показувати інфо про модерацію (наприклад, створення адміном з авто-схваленням). */
+  hideModerationNotice = false
 }) => {
   const [tags, setTags] = useState(initialData?.tags || [])
   const [tagInput, setTagInput] = useState('')
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: {
       title: initialData?.title || '',
       description: initialData?.description || '',
@@ -20,6 +23,18 @@ const ResourceForm = ({
       url: initialData?.url || ''
     }
   })
+
+  useEffect(() => {
+    if (initialData) {
+      reset({
+        title: initialData.title || '',
+        description: initialData.description || '',
+        category: initialData.category || 'other',
+        url: initialData.url || ''
+      })
+      setTags(Array.isArray(initialData.tags) ? initialData.tags : [])
+    }
+  }, [initialData, reset])
 
   const categories = [
     { value: 'education', label: 'Освіта' },
@@ -186,13 +201,22 @@ const ResourceForm = ({
         )}
       </Form.Group>
 
-      {/* Info Alert */}
-      <Alert variant="info" className="mb-4">
-        <small>
-          Після створення ресурс буде надіслано на модерацію. 
-          Він стане видимим для інших користувачів після схвалення адміністратором.
-        </small>
-      </Alert>
+      {/* Info Alert — лише для створення */}
+      {mode === 'create' && !hideModerationNotice && (
+        <Alert variant="info" className="mb-4">
+          <small>
+            Після створення ресурс буде надіслано на модерацію.
+            Він стане видимим для інших користувачів після схвалення адміністратором.
+          </small>
+        </Alert>
+      )}
+      {mode === 'edit' && (
+        <Alert variant="warning" className="mb-4">
+          <small>
+            Після зміни назви, опису або посилання ресурс знову потрапить на модерацію.
+          </small>
+        </Alert>
+      )}
 
       {/* Submit Button */}
       <div className="d-grid gap-2">

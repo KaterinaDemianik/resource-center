@@ -1,29 +1,20 @@
-import React, { useState, useEffect } from 'react'
-import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { FiUsers, FiBook, FiBarChart2, FiHome } from 'react-icons/fi'
+import React from 'react'
+import { Link, Outlet, useLocation } from 'react-router-dom'
+import { FiUsers, FiBook, FiBarChart2, FiHome, FiPlusCircle } from 'react-icons/fi'
+import { useAuth } from '../../contexts/AuthContext.jsx'
+import { Spinner, Container } from 'react-bootstrap'
 
 const AdminLayout = () => {
-  const [user, setUser] = useState(null)
-  const navigate = useNavigate()
+  const { user, loading } = useAuth()
   const location = useLocation()
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    if (!storedUser) {
-      navigate('/login')
-      return
-    }
-
-    const userData = JSON.parse(storedUser)
-    
-    // Check if user is admin
-    if (userData.role !== 'admin') {
-      navigate('/')
-      return
-    }
-
-    setUser(userData)
-  }, [navigate])
+  if (loading) {
+    return (
+      <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
+        <Spinner animation="border" variant="light" />
+      </Container>
+    )
+  }
 
   if (!user) {
     return null
@@ -35,8 +26,8 @@ const AdminLayout = () => {
       gap: '1.5rem',
       padding: '2rem',
       alignItems: 'flex-start'
-    }}>
-      {/* Sidebar */}
+    }}
+    >
       <div style={{
         width: '200px',
         flexShrink: 0,
@@ -45,12 +36,13 @@ const AdminLayout = () => {
         borderRadius: '12px',
         padding: '1.5rem 1rem',
         marginTop: '2rem'
-      }}>
+      }}
+      >
         <h5 style={{ whiteSpace: 'nowrap', color: '#e2e8f0', marginBottom: '1.5rem' }}>
           Адмін панель
         </h5>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <Link 
+          <Link
             to="/admin"
             style={{
               display: 'flex',
@@ -67,7 +59,7 @@ const AdminLayout = () => {
             <FiBarChart2 size={18} />
             Статистика
           </Link>
-          <Link 
+          <Link
             to="/admin/resources"
             style={{
               display: 'flex',
@@ -84,7 +76,24 @@ const AdminLayout = () => {
             <FiBook size={18} />
             Ресурси
           </Link>
-          <Link 
+          <Link
+            to="/admin/create-resource"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              color: location.pathname === '/admin/create-resource' ? '#a78bfa' : '#94a3b8',
+              whiteSpace: 'nowrap',
+              textDecoration: 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            <FiPlusCircle size={18} />
+            Створити ресурс
+          </Link>
+          <Link
             to="/admin/users"
             style={{
               display: 'flex',
@@ -102,7 +111,7 @@ const AdminLayout = () => {
             Користувачі
           </Link>
           <hr style={{ borderColor: '#2d3748', margin: '1rem 0' }} />
-          <Link 
+          <Link
             to="/"
             style={{
               display: 'flex',
@@ -122,7 +131,6 @@ const AdminLayout = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div style={{ flex: 1 }}>
         <Outlet />
       </div>

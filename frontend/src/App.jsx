@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { Routes, Route, Link, useNavigate, NavLink } from 'react-router-dom'
-import { Container, Navbar, Nav, Button, Card, Row, Col } from 'react-bootstrap'
+import { Container, Navbar, Nav, Button } from 'react-bootstrap'
 import { Book, Search } from 'react-bootstrap-icons'
 import { FiPlus, FiBell } from 'react-icons/fi'
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
+import { useAuth } from './contexts/AuthContext.jsx'
+import ApiToggle from './components/ApiToggle'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import VerifyEmail from './pages/VerifyEmail'
@@ -12,24 +14,20 @@ import Resources from './pages/Resources'
 import ResourceDetail from './pages/ResourceDetail'
 import Profile from './pages/Profile'
 import CreateResource from './pages/CreateResource'
+import EditResource from './pages/EditResource'
 import Notifications from './pages/Notifications'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminResources from './pages/admin/AdminResources'
 import AdminUsers from './pages/admin/AdminUsers'
+import AdminCreateResource from './pages/admin/AdminCreateResource'
 import AdminRoute from './components/AdminRoute'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 // Головна сторінка
 const Home = () => {
-  const [user, setUser] = useState(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  const { user } = useAuth()
+  const navigate = useNavigate()
 
   return (
     <Container className="py-5">
@@ -38,7 +36,7 @@ const Home = () => {
         <p className="lead text-muted mb-4">
           Веб-застосунок для обміну освітніми та корисними ресурсами
         </p>
-        
+
         {user ? (
           <div className="mt-4">
             <p className="h5">Вітаємо, {user.firstName} {user.lastName}!</p>
@@ -58,10 +56,12 @@ const Home = () => {
           </div>
         )}
 
-        <Row className="mt-5 g-4">
-          <Col md={4}>
-            <Card
-              className="h-100"
+        <div className="row mt-5 g-4 justify-content-center">
+          <div className="col-md-4">
+            <div
+              role="button"
+              tabIndex={0}
+              className="card h-100"
               style={{
                 backgroundColor: '#16213e',
                 border: '1px solid #2d3748',
@@ -70,157 +70,127 @@ const Home = () => {
                 cursor: 'pointer'
               }}
               onClick={() => navigate('/resources')}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#7c3aed';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#2d3748';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+              onKeyDown={(e) => e.key === 'Enter' && navigate('/resources')}
             >
-              <Card.Body style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+              <div className="card-body text-center" style={{ padding: '2rem 1.5rem' }}>
                 <Book size={32} color="#a78bfa" style={{ marginBottom: '12px' }} />
-                <Card.Title style={{ color: '#e2e8f0', fontSize: '16px', fontWeight: 600, marginBottom: '10px' }}>
+                <h5 style={{ color: '#e2e8f0', fontWeight: 600, marginBottom: '10px' }}>
                   Освітні ресурси
-                </Card.Title>
-                <Card.Text style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
+                </h5>
+                <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
                   Знаходьте та діліться корисними матеріалами для навчання
-                </Card.Text>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={4}>
-            <Card
-              className="h-100"
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div
+              role="button"
+              tabIndex={0}
+              className="card h-100"
               style={{
                 backgroundColor: '#16213e',
                 border: '1px solid #2d3748',
                 borderRadius: '12px',
-                transition: 'border-color 0.2s, transform 0.2s',
                 cursor: 'pointer'
               }}
               onClick={() => navigate('/resources')}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#7c3aed';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#2d3748';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+              onKeyDown={(e) => e.key === 'Enter' && navigate('/resources')}
             >
-              <Card.Body style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+              <div className="card-body text-center" style={{ padding: '2rem 1.5rem' }}>
                 <Search size={32} color="#a78bfa" style={{ marginBottom: '12px' }} />
-                <Card.Title style={{ color: '#e2e8f0', fontSize: '16px', fontWeight: 600, marginBottom: '10px' }}>
+                <h5 style={{ color: '#e2e8f0', fontWeight: 600, marginBottom: '10px' }}>
                   Пошук та фільтрація
-                </Card.Title>
-                <Card.Text style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
+                </h5>
+                <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
                   Швидко знаходьте потрібні ресурси за категоріями
-                </Card.Text>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={4}>
-            <Card
-              className="h-100"
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div
+              role="button"
+              tabIndex={0}
+              className="card h-100"
               style={{
                 backgroundColor: '#16213e',
                 border: '1px solid #2d3748',
                 borderRadius: '12px',
-                transition: 'border-color 0.2s, transform 0.2s',
                 cursor: 'pointer'
               }}
               onClick={() => {
-                if (user) {
-                  navigate('/create-resource');
-                } else {
-                  navigate('/login');
+                if (user) navigate('/create-resource')
+                else navigate('/login')
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (user) navigate('/create-resource')
+                  else navigate('/login')
                 }
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#7c3aed';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#2d3748';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
             >
-              <Card.Body style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+              <div className="card-body text-center" style={{ padding: '2rem 1.5rem' }}>
                 <FiPlus size={32} color="#a78bfa" style={{ marginBottom: '12px' }} />
-                <Card.Title style={{ color: '#e2e8f0', fontSize: '16px', fontWeight: 600, marginBottom: '10px' }}>
+                <h5 style={{ color: '#e2e8f0', fontWeight: 600, marginBottom: '10px' }}>
                   Додати ресурс
-                </Card.Title>
-                <Card.Text style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
+                </h5>
+                <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
                   Поділіться корисними матеріалами зі спільнотою
-                </Card.Text>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </Container>
-  );
-};
+  )
+}
 
 function App() {
-  const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const navigate = useNavigate()
+  const { user, token, logout } = useAuth()
 
-  // Використовуємо React Query для автоматичного оновлення даних користувача
   const { data: userData } = useQuery({
     queryKey: ['currentUser'],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return null;
-      
+      if (!token) return null
       try {
-        const response = await axios.get('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axios.get('/api/auth/me')
         if (response.data.success) {
-          localStorage.setItem('user', JSON.stringify(response.data.user));
-          return response.data.user;
+          return response.data.user
         }
       } catch (error) {
-        console.error('Error fetching user:', error);
-        return null;
+        console.error('Error fetching user:', error)
       }
+      return null
     },
     enabled: !!token,
-    staleTime: 5 * 60 * 1000, // 5 хвилин
-    refetchOnWindowFocus: true, // Оновлювати при фокусі вікна
-  });
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true
+  })
 
-  const user = userData || (token ? JSON.parse(localStorage.getItem('user') || 'null') : null);
+  const displayUser = userData || user
 
-  // Запит для підрахунку непрочитаних сповіщень
   const { data: unreadData } = useQuery({
     queryKey: ['unreadCount'],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return { count: 0 };
-      
+      if (!token) return { count: 0 }
       try {
-        const response = await axios.get('/api/notifications/unread-count', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        return response.data;
-      } catch (error) {
-        return { count: 0 };
+        const response = await axios.get('/api/notifications/unread-count')
+        return response.data
+      } catch {
+        return { count: 0 }
       }
     },
     enabled: !!token,
-    refetchInterval: 30000, // Оновлювати кожні 30 секунд
-  });
+    refetchInterval: 30000
+  })
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/');
-    window.location.reload();
-  };
+  const handleLogout = async () => {
+    await logout()
+    navigate('/')
+  }
 
   return (
     <div className="App d-flex flex-column min-vh-100">
@@ -232,8 +202,9 @@ function App() {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto" style={{ gap: '1.5rem', alignItems: 'center' }}>
-              <Nav.Link 
-                as={NavLink} 
+              <ApiToggle />
+              <Nav.Link
+                as={NavLink}
                 to="/"
                 style={({ isActive }) => ({
                   color: isActive ? '#a78bfa' : '#94a3b8',
@@ -244,8 +215,8 @@ function App() {
               >
                 Головна
               </Nav.Link>
-              <Nav.Link 
-                as={NavLink} 
+              <Nav.Link
+                as={NavLink}
                 to="/resources"
                 style={({ isActive }) => ({
                   color: isActive ? '#a78bfa' : '#94a3b8',
@@ -256,9 +227,9 @@ function App() {
               >
                 Ресурси
               </Nav.Link>
-              {user && (
-                <Nav.Link 
-                  as={NavLink} 
+              {displayUser && (
+                <Nav.Link
+                  as={NavLink}
                   to="/create-resource"
                   style={({ isActive }) => ({
                     color: isActive ? '#a78bfa' : '#94a3b8',
@@ -270,9 +241,9 @@ function App() {
                   Додати ресурс
                 </Nav.Link>
               )}
-              {user && (
-                <Nav.Link 
-                  as={NavLink} 
+              {displayUser && (
+                <Nav.Link
+                  as={NavLink}
                   to="/notifications"
                   style={({ isActive }) => ({
                     color: isActive ? '#a78bfa' : '#94a3b8',
@@ -284,7 +255,7 @@ function App() {
                 >
                   <FiBell />
                   {unreadData?.count > 0 && (
-                    <span 
+                    <span
                       style={{
                         position: 'absolute',
                         top: '-5px',
@@ -304,10 +275,10 @@ function App() {
                   )}
                 </Nav.Link>
               )}
-              {user ? (
+              {displayUser ? (
                 <>
-                  <Nav.Link 
-                    as={NavLink} 
+                  <Nav.Link
+                    as={NavLink}
                     to="/profile"
                     style={({ isActive }) => ({
                       color: isActive ? '#a78bfa' : '#94a3b8',
@@ -318,9 +289,9 @@ function App() {
                   >
                     Профіль
                   </Nav.Link>
-                  {user.role === 'admin' && (
-                    <Nav.Link 
-                      as={NavLink} 
+                  {displayUser.role === 'admin' && (
+                    <Nav.Link
+                      as={NavLink}
                       to="/admin"
                       style={({ isActive }) => ({
                         color: isActive ? '#a78bfa' : '#94a3b8',
@@ -333,13 +304,9 @@ function App() {
                     </Nav.Link>
                   )}
                   <span className="navbar-text text-light me-2">
-                    {user.firstName} {user.lastName}
+                    {displayUser.firstName} {displayUser.lastName}
                   </span>
-                  <Button 
-                    variant="outline-light" 
-                    size="sm" 
-                    onClick={handleLogout}
-                  >
+                  <Button variant="outline-light" size="sm" onClick={handleLogout}>
                     Вийти
                   </Button>
                 </>
@@ -353,7 +320,7 @@ function App() {
           </Navbar.Collapse>
         </Container>
       </Navbar>
-      
+
       <main className="flex-grow-1">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -362,17 +329,54 @@ function App() {
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/resources" element={<Resources />} />
           <Route path="/resources/:id" element={<ResourceDetail />} />
-          <Route path="/create-resource" element={<CreateResource />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+          <Route
+            path="/create-resource"
+            element={
+              <ProtectedRoute>
+                <CreateResource />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edit-resource/:id"
+            element={
+              <ProtectedRoute>
+                <EditResource />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
             <Route index element={<AdminDashboard />} />
+            <Route path="create-resource" element={<AdminCreateResource />} />
             <Route path="resources" element={<AdminResources />} />
             <Route path="users" element={<AdminUsers />} />
           </Route>
         </Routes>
       </main>
-      
+
       <footer className="py-4 mt-auto">
         <Container>
           <div className="text-center">

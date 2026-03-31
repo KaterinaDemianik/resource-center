@@ -1,32 +1,35 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { GraphQLError } = require('graphql');
 const User = require('../models/User');
 const Resource = require('../models/Resource');
 const { sendVerificationEmail } = require('../utils/email');
+const {
+  buildPublicResourceQuery,
+  buildAdminResourceStatusQuery
+} = require('../services/resourceService');
 
 /**
  * Перевіряє чи користувач автентифікований
- * @param {Object} context - GraphQL context з даними користувача
- * @returns {Object} - Дані користувача
- * @throws {Error} - Якщо користувач не автентифікований
  */
 const checkAuth = (context) => {
   if (!context.user) {
-    throw new Error('Не авторизовано. Будь ласка, увійдіть в систему.');
+    throw new GraphQLError('Не авторизовано. Будь ласка, увійдіть в систему.', {
+      extensions: { code: 'UNAUTHENTICATED' }
+    });
   }
   return context.user;
 };
 
 /**
  * Перевіряє чи користувач має права адміністратора
- * @param {Object} context - GraphQL context з даними користувача
- * @returns {Object} - Дані користувача
- * @throws {Error} - Якщо користувач не є адміністратором
  */
 const checkAdmin = (context) => {
   const user = checkAuth(context);
   if (user.role !== 'admin') {
-    throw new Error('Доступ заборонено. Потрібні права адміністратора.');
+    throw new GraphQLError('Доступ заборонено. Потрібні права адміністратора.', {
+      extensions: { code: 'FORBIDDEN' }
+    });
   }
   return user;
 };
@@ -67,24 +70,10 @@ const resolvers = {
       const limit = Math.min(Math.max(1, filter?.limit || 10), 50);
       const skip = (page - 1) * limit;
 
-      // Базовий запит для активних та схвалених ресурсів
-      let query = { 
-        isActive: true, 
-        isApproved: true 
-      };
-
-      // Додавання фільтрів до запиту
-      if (filter?.category) {
-        query.category = filter.category;
-      }
-
-      if (filter?.search) {
-        // Використовуємо regex для часткового пошуку
-        query.$or = [
-          { title: { $regex: filter.search, $options: 'i' } },
-          { description: { $regex: filter.search, $options: 'i' } }
-        ];
-      }
+      const query = buildPublicResourceQuery({
+        category: filter?.category,
+        search: filter?.search
+      });
 
       // Отримання ресурсів з популяцією автора
       const resources = await Resource.find(query)
@@ -146,7 +135,10 @@ const resolvers = {
       const user = checkAuth(context);
       return await User.findById(user.userId);
     } catch (error) {
-      return null;
+      if (error instanceof GraphQLError && error.extensions?.code === 'UNAUTHENTICATED') {
+        return null;
+      }
+      throw error;
     }
   },
 
@@ -171,6 +163,7 @@ const resolvers = {
         pages: Math.ceil(total / limit)
       };
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL myResources error:', error);
       return { success: false, resources: [], total: 0 };
     }
@@ -181,18 +174,10 @@ const resolvers = {
       checkAdmin(context);
       const skip = (page - 1) * limit;
 
-      let query = {};
-      switch (status) {
-        case 'pending':
-          query = { isApproved: false, isActive: true };
-          break;
-        case 'approved':
-          query = { isApproved: true, isActive: true };
-          break;
-        case 'inactive':
-          query = { isActive: false };
-          break;
-      }
+      const query =
+        status && ['pending', 'approved', 'inactive', 'rejected'].includes(status)
+          ? buildAdminResourceStatusQuery(status)
+          : {};
 
       const resources = await Resource.find(query)
         .populate('author', 'firstName lastName email')
@@ -211,6 +196,7 @@ const resolvers = {
         pages: Math.ceil(total / limit)
       };
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL adminResources error:', error);
       return { success: false, resources: [], total: 0 };
     }
@@ -244,6 +230,7 @@ const resolvers = {
 
       return { success: true, users, total };
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL adminUsers error:', error);
       return { success: false, users: [], total: 0 };
     }
@@ -271,6 +258,7 @@ const resolvers = {
         pendingResources
       };
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL adminStats error:', error);
       return { success: false };
     }
@@ -488,6 +476,7 @@ const resolvers = {
         resource 
       }, 'Ресурс створено. Очікує модерації.');
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL createResource error:', error);
       return formatResponse(false, null, 'Помилка створення ресурсу');
     }
@@ -526,6 +515,7 @@ const resolvers = {
 
       return { success: true, message: 'Ресурс оновлено', resource };
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL updateResource error:', error);
       return { success: false, message: 'Помилка оновлення ресурсу' };
     }
@@ -548,6 +538,7 @@ const resolvers = {
 
       return { success: true, message: 'Ресурс видалено' };
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL deleteResource error:', error);
       return { success: false, message: 'Помилка видалення ресурсу' };
     }
@@ -571,6 +562,7 @@ const resolvers = {
 
       return { success: true, message: 'Ресурс схвалено', resource };
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL approveResource error:', error);
       return { success: false, message: 'Помилка схвалення ресурсу' };
     }
@@ -594,6 +586,7 @@ const resolvers = {
 
       return { success: true, message: 'Схвалення відхилено', resource };
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL rejectResource error:', error);
       return { success: false, message: 'Помилка відхилення ресурсу' };
     }
@@ -619,6 +612,7 @@ const resolvers = {
         resource
       };
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL toggleResourceActive error:', error);
       return { success: false, message: 'Помилка зміни статусу' };
     }
@@ -645,6 +639,7 @@ const resolvers = {
         message: `Користувача ${user.isActive ? 'активовано' : 'деактивовано'}`
       };
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       console.error('GraphQL toggleUserActive error:', error);
       return { success: false, message: 'Помилка зміни статусу користувача' };
     }

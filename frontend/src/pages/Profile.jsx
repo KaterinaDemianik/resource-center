@@ -3,9 +3,11 @@ import { Container, Row, Col, Card, Button, Form, Tab, Tabs, Badge, Alert } from
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { FiUser, FiSettings, FiEdit } from 'react-icons/fi'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 const Profile = () => {
   const queryClient = useQueryClient()
+  const { user: authUser, updateUser, token, clearSession } = useAuth()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('profile')
@@ -30,20 +32,17 @@ const Profile = () => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const token = localStorage.getItem('token')
         if (!token) {
           setLoading(false)
           return
         }
 
-        const response = await axios.get('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const response = await axios.get('/api/auth/me')
 
         if (response.data.success) {
           const userData = response.data.user
           setUser(userData)
-          localStorage.setItem('user', JSON.stringify(userData))
+          updateUser(userData)
           setFormData({
             firstName: userData.firstName || '',
             lastName: userData.lastName || '',
@@ -52,14 +51,12 @@ const Profile = () => {
         }
       } catch (error) {
         console.error('Error fetching user:', error)
-        const storedUser = localStorage.getItem('user')
-        if (storedUser) {
-          const userData = JSON.parse(storedUser)
-          setUser(userData)
+        if (authUser) {
+          setUser(authUser)
           setFormData({
-            firstName: userData.firstName || '',
-            lastName: userData.lastName || '',
-            email: userData.email || ''
+            firstName: authUser.firstName || '',
+            lastName: authUser.lastName || '',
+            email: authUser.email || ''
           })
         }
       } finally {
@@ -68,24 +65,20 @@ const Profile = () => {
     }
 
     fetchCurrentUser()
-  }, [])
+  }, [token])
 
   const onSubmitProfile = async (e) => {
     e.preventDefault()
     try {
-      const token = localStorage.getItem('token')
       const response = await axios.put('/api/auth/profile', {
         firstName: formData.firstName,
         lastName: formData.lastName
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       })
 
       if (response.data.success) {
         const updatedUser = response.data.user
         setUser(updatedUser)
-        localStorage.setItem('user', JSON.stringify(updatedUser))
-        // Інвалідуємо дані користувача для оновлення в навбарі
+        updateUser(updatedUser)
         queryClient.invalidateQueries({ queryKey: ['currentUser'] })
         setIsEditing(false)
       }
@@ -128,13 +121,11 @@ const Profile = () => {
 
     setUploadingAvatar(true)
     try {
-      const token = localStorage.getItem('token')
       const formData = new FormData()
       formData.append('avatar', avatarFile)
 
       const response = await axios.post('/api/auth/upload-avatar', formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       })
@@ -142,7 +133,7 @@ const Profile = () => {
       if (response.data.success) {
         const updatedUser = { ...user, avatar: response.data.avatar }
         setUser(updatedUser)
-        localStorage.setItem('user', JSON.stringify(updatedUser))
+        updateUser(updatedUser)
         queryClient.invalidateQueries({ queryKey: ['currentUser'] })
         setAvatarFile(null)
         setAvatarPreview(null)
@@ -172,14 +163,9 @@ const Profile = () => {
     }
 
     try {
-      const token = localStorage.getItem('token')
       const response = await axios.post('/api/auth/change-password', {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
       })
 
       if (response.data.success) {
@@ -197,16 +183,10 @@ const Profile = () => {
 
   const handleDeleteAccount = async () => {
     try {
-      const token = localStorage.getItem('token')
-      const response = await axios.delete('/api/auth/delete-account', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      const response = await axios.delete('/api/auth/delete-account')
 
       if (response.data.success) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
+        clearSession()
         window.location.href = '/'
       }
     } catch (error) {
@@ -247,7 +227,7 @@ const Profile = () => {
                 <div className="position-relative" style={{ width: '120px', height: '120px' }}>
                   {avatarPreview || user?.avatar ? (
                     <img
-                      src={avatarPreview || `${axios.defaults.baseURL || 'http://localhost:5001'}${user.avatar}`}
+                      src={avatarPreview || (user.avatar ? `${user.avatar}` : '')}
                       alt="Avatar"
                       style={{
                         width: '120px',

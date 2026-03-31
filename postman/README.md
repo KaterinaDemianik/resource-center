@@ -1,13 +1,13 @@
-# 📮 Postman Колекція - Resource Center API
+# Postman Колекція - Resource Center API
 
-## 📥 Імпорт колекції
+## Імпорт колекції
 
 1. Відкрийте Postman
 2. Натисніть **Import** у верхньому лівому куті
 3. Перетягніть файл `Resource-Center-API.postman_collection.json` або виберіть його
 4. Натисніть **Import**
 
-## 🔧 Налаштування
+## Налаштування
 
 ### Змінні колекції
 
@@ -33,9 +33,9 @@
    - Скопіюйте `token` з відповіді
    - Встановіть змінну `admin_token` в колекції
 
-## 📁 Структура колекції
+## Структура колекції
 
-### 1️⃣ **Auth** - Авторизація та реєстрація
+###  **Auth** - Авторизація та реєстрація
 - `Register` - Реєстрація нового користувача
 - `Login` - Авторизація (отримання JWT токену)
 - `Verify Email` - Підтвердження email адреси
@@ -43,7 +43,7 @@
 - `Upload Avatar` - Завантаження аватара
 - `Change Password` - Зміна паролю
 
-### 2️⃣ **Resources** - Управління ресурсами
+###  **Resources** - Управління ресурсами
 - `Get All Resources` - Список всіх ресурсів (публічний)
   - Підтримує пагінацію: `?page=1&limit=10`
   - Фільтрація: `?category=education`
@@ -54,7 +54,7 @@
 - `Delete Resource` - Видалення ресурсу (тільки автор)
 - `Get My Resources` - Ресурси поточного користувача
 
-### 3️⃣ **Admin** - Адміністративні функції
+###  **Admin** - Адміністративні функції
 - `Get Admin Stats` - Статистика системи
 - `Get Admin Resources` - Ресурси для модерації
   - `?status=pending` - на модерації
@@ -68,14 +68,14 @@
 - `Get Admin Users` - Список користувачів
 - `Toggle User Active` - Активувати/деактивувати користувача
 
-### 4️⃣ **GraphQL** - GraphQL API
+###  **GraphQL** - GraphQL API
 - `GraphQL - Get Resources` - Отримання ресурсів через GraphQL
 - `GraphQL - Register` - Реєстрація через GraphQL
 - `GraphQL - Login` - Авторизація через GraphQL
 - `GraphQL - Create Resource` - Створення ресурсу через GraphQL
 - `GraphQL - Admin Stats` - Статистика через GraphQL
 
-## 🚀 Швидкий старт
+## Швидкий старт
 
 ### Крок 1: Реєстрація
 ```
@@ -113,7 +113,7 @@ Authorization: Bearer {{token}}
 }
 ```
 
-## 📊 Категорії ресурсів
+## Категорії ресурсів
 
 - `education` - Освіта
 - `technology` - Технології
@@ -122,14 +122,14 @@ Authorization: Bearer {{token}}
 - `entertainment` - Розваги
 - `other` - Інше
 
-## 🔐 Авторизація
+## Авторизація
 
 Більшість endpoints потребують JWT токен в заголовку:
 ```
 Authorization: Bearer your-jwt-token-here
 ```
 
-## 🎯 GraphQL Playground
+## GraphQL Playground
 
 Для тестування GraphQL запитів відкрийте:
 ```
@@ -175,7 +175,7 @@ mutation CreateResource {
 }
 ```
 
-## ⚠️ Важливо
+## Важливо
 
 1. **Базова URL**: `http://localhost:5001`
 2. **Порт бекенду**: `5001`
@@ -183,7 +183,7 @@ mutation CreateResource {
    - Email: `admin@example.com`
    - Password: `password123`
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Помилка 401 Unauthorized
 - Перевірте чи токен встановлено в змінних колекції
@@ -201,25 +201,10 @@ mutation CreateResource {
 - Перевірте логи сервера
 - Перевірте чи MongoDB підключено
 
-## 📝 Додаткова інформація
+## Додаткова інформація
 
 - REST API документація: `/api/*`
 - GraphQL endpoint: `/graphql`
 - GraphQL Playground: `http://localhost:5001/graphql`
 - Frontend: `http://localhost:3000`
 - Backend: `http://localhost:5001`
-
-## 🎓 Тестування
-
-Рекомендований порядок тестування:
-
-1. ✅ Auth endpoints (Register → Login)
-2. ✅ Resources endpoints (Get All → Create → Update → Delete)
-3. ✅ Admin endpoints (Stats → Approve/Reject)
-4. ✅ GraphQL queries та mutations
-
----
-
-**Проєкт**: Ресурсний Центр  
-**Версія API**: 1.0  
-**Дата**: 2026

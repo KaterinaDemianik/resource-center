@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
-import Cookies from 'js-cookie'
 import { toast } from 'react-toastify'
+
+const TOKEN_KEY = 'token'
+const USER_KEY = 'user'
 
 const AuthContext = createContext()
 
@@ -13,66 +15,84 @@ export const useAuth = () => {
   return context
 }
 
-// Configure axios defaults
-axios.defaults.baseURL = 'http://localhost:5001'
+axios.defaults.baseURL = ''
 axios.defaults.withCredentials = true
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem(USER_KEY)
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  })
+  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY))
   const [loading, setLoading] = useState(true)
-  const [token, setToken] = useState(Cookies.get('token'))
 
-  // Set up axios interceptor for token
+  const persistSession = useCallback((newToken, userData) => {
+    if (newToken) {
+      localStorage.setItem(TOKEN_KEY, newToken)
+      setToken(newToken)
+    }
+    if (userData) {
+      localStorage.setItem(USER_KEY, JSON.stringify(userData))
+      setUser(userData)
+    }
+  }, [])
+
+  const clearSession = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    setToken(null)
+    setUser(null)
+    delete axios.defaults.headers.common.Authorization
+  }, [])
+
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`
     } else {
-      delete axios.defaults.headers.common['Authorization']
+      delete axios.defaults.headers.common.Authorization
     }
   }, [token])
 
-  // Check if user is logged in on app start
   useEffect(() => {
-    const checkAuth = async () => {
-      const savedToken = Cookies.get('token')
-      if (savedToken) {
-        try {
-          setToken(savedToken)
-          const response = await axios.get('/api/auth/me')
-          if (response.data.success) {
-            setUser(response.data.user)
-          } else {
-            // Token is invalid, remove it
-            Cookies.remove('token')
-            setToken(null)
-          }
-        } catch (error) {
-          console.error('Auth check failed:', error)
-          Cookies.remove('token')
-          setToken(null)
-        }
+    const verify = async () => {
+      const storedToken = localStorage.getItem(TOKEN_KEY)
+      if (!storedToken) {
+        setLoading(false)
+        return
       }
-      setLoading(false)
+      try {
+        setToken(storedToken)
+        axios.defaults.headers.common.Authorization = `Bearer ${storedToken}`
+        const response = await axios.get('/api/auth/me')
+        if (response.data.success) {
+          localStorage.setItem(USER_KEY, JSON.stringify(response.data.user))
+          setUser(response.data.user)
+        } else {
+          clearSession()
+        }
+      } catch {
+        clearSession()
+      } finally {
+        setLoading(false)
+      }
     }
-
-    checkAuth()
-  }, [])
+    verify()
+  }, [clearSession])
 
   const login = async (email, password) => {
     try {
       const response = await axios.post('/api/auth/login', { email, password })
-      
       if (response.data.success) {
         const { token: newToken, user: userData } = response.data
-        
-        // Save token to cookie (expires in 7 days)
-        Cookies.set('token', newToken, { expires: 7 })
-        setToken(newToken)
-        setUser(userData)
-        
+        persistSession(newToken, userData)
         toast.success('Успішний вхід!')
         return { success: true }
       }
+      return { success: false, message: response.data?.message }
     } catch (error) {
       const message = error.response?.data?.message || 'Помилка входу'
       toast.error(message)
@@ -83,11 +103,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await axios.post('/api/auth/register', userData)
-      
       if (response.data.success) {
         toast.success('Реєстрація успішна! Перевірте електронну пошту для підтвердження.')
         return { success: true }
       }
+      return { success: false, message: response.data?.message }
     } catch (error) {
       const message = error.response?.data?.message || 'Помилка реєстрації'
       toast.error(message)
@@ -101,18 +121,18 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
-      // Clear local state regardless of server response
-      Cookies.remove('token')
-      setToken(null)
-      setUser(null)
-      delete axios.defaults.headers.common['Authorization']
+      clearSession()
       toast.success('Ви вийшли з системи')
     }
   }
 
-  const updateUser = (userData) => {
-    setUser(prev => ({ ...prev, ...userData }))
-  }
+  const updateUser = useCallback((userData) => {
+    setUser((prev) => {
+      const next = { ...prev, ...userData }
+      localStorage.setItem(USER_KEY, JSON.stringify(next))
+      return next
+    })
+  }, [])
 
   const value = {
     user,
@@ -122,7 +142,9 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
-    isAuthenticated: !!user,
+    clearSession,
+    persistSession,
+    isAuthenticated: !!user && !!token,
     isAdmin: user?.role === 'admin'
   }
 

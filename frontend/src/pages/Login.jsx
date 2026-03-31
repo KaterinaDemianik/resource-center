@@ -1,107 +1,88 @@
-import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react'
+import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 const Login = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { login } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
-  });
-  const [errors, setErrors] = useState({});
-  const [serverError, setServerError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  })
+  const [errors, setErrors] = useState({})
+  const [serverError, setServerError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
-  // Валідація email
   const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
 
-  // Валідація форми на клієнті
   const validateForm = () => {
-    const newErrors = {};
+    const newErrors = {}
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email є обов\'язковим полем';
+      newErrors.email = 'Email є обов\'язковим полем'
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Введіть коректний email';
+      newErrors.email = 'Введіть коректний email'
     }
 
     if (!formData.password) {
-      newErrors.password = 'Пароль є обов\'язковим полем';
+      newErrors.password = 'Пароль є обов\'язковим полем'
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Пароль має містити мінімум 6 символів';
+      newErrors.password = 'Пароль має містити мінімум 6 символів'
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
-  // Обробка зміни полів форми
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
-    }));
-    
-    // Очищаємо помилку поля при введенні
+    }))
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
-      }));
+      }))
     }
-    setServerError('');
-  };
+    setServerError('')
+  }
 
-  // Обробка відправки форми
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setServerError('');
-    setSuccessMessage('');
+    e.preventDefault()
+    setServerError('')
+    setSuccessMessage('')
 
     if (!validateForm()) {
-      return;
+      return
     }
 
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Зберігаємо токен
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        setSuccessMessage('Вхід успішний! Перенаправлення...');
-        
-        // Перенаправляємо на головну сторінку
-        setTimeout(() => {
-          navigate('/');
-          window.location.reload();
-        }, 1000);
+      const result = await login(formData.email, formData.password)
+      if (result.success) {
+        setSuccessMessage('Вхід успішний! Перенаправлення...')
+        const from = location.state?.from?.pathname || '/'
+        setTimeout(() => navigate(from, { replace: true }), 500)
       } else {
-        setServerError(data.message || 'Помилка входу. Перевірте дані.');
+        setServerError(result.message || 'Помилка входу. Перевірте дані.')
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setServerError('Помилка з\'єднання з сервером. Спробуйте пізніше.');
+      console.error('Login error:', error)
+      setServerError('Помилка з\'єднання з сервером. Спробуйте пізніше.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <Container className="py-5">
@@ -160,9 +141,9 @@ const Login = () => {
                 </Form.Group>
 
                 <div className="d-grid gap-2 mt-4">
-                  <Button 
-                    variant="primary" 
-                    type="submit" 
+                  <Button
+                    variant="primary"
+                    type="submit"
                     size="lg"
                     disabled={isLoading}
                   >
@@ -200,7 +181,7 @@ const Login = () => {
         </Col>
       </Row>
     </Container>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

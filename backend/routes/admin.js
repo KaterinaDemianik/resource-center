@@ -4,6 +4,11 @@ const Resource = require('../models/Resource');
 const User = require('../models/User');
 const { adminAuth } = require('../middleware/auth');
 const { createNotification } = require('./notifications');
+const {
+  buildAdminResourceStatusQuery,
+  mergeAdminQueryWithSearch,
+  formatPagination
+} = require('../services/resourceService');
 
 const router = express.Router();
 
@@ -21,46 +26,13 @@ const sendValidationErrors = (res, errors) => {
 };
 
 /**
- * Форматує об'єкт пагінації
- * @param {number} page - Поточна сторінка
- * @param {number} limit - Ліміт елементів
- * @param {number} total - Загальна кількість
- * @returns {Object} - Об'єкт пагінації
- */
-const formatPagination = (page, limit, total) => {
-  const totalPages = Math.ceil(total / limit);
-  return {
-    current: page,
-    pages: totalPages,
-    total,
-    hasNext: page < totalPages,
-    hasPrev: page > 1
-  };
-};
-
-/**
- * Будує запит для фільтрації ресурсів по статусу
- * @param {string} status - Статус фільтрації
- * @returns {Object} - MongoDB query об'єкт
- */
-const buildResourceStatusQuery = (status) => {
-  const statusQueries = {
-    pending: { isApproved: false, rejectedAt: null },
-    approved: { isApproved: true, isActive: true },
-    inactive: { isActive: false, isApproved: true },
-    rejected: { rejectedAt: { $ne: null } }
-  };
-  
-  return statusQueries[status] || {};
-};
-
-/**
  * Отримує всі ресурси для адміністратора з фільтрацією по статусу
  */
 router.get('/resources', adminAuth, [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be between 1 and 50'),
-  query('status').optional().isIn(['all', 'pending', 'approved', 'inactive', 'rejected']).withMessage('Invalid status filter')
+  query('status').optional().isIn(['all', 'pending', 'approved', 'inactive', 'rejected']).withMessage('Invalid status filter'),
+  query('search').optional().isLength({ max: 100 }).withMessage('Search term too long')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -73,19 +45,20 @@ router.get('/resources', adminAuth, [
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
     
-    // Побудова запиту з фільтром по статусу
+    // Побудова запиту з фільтром по статусу та опціональним пошуком
     const status = req.query.status === 'all' ? null : req.query.status;
-    const query = buildResourceStatusQuery(status);
+    const baseQuery = buildAdminResourceStatusQuery(status);
+    const mongoQuery = mergeAdminQueryWithSearch(baseQuery, req.query.search);
 
     // Отримання ресурсів з пагінацією
     const [resources, total] = await Promise.all([
-      Resource.find(query)
+      Resource.find(mongoQuery)
         .populate('author', 'firstName lastName email')
         .populate('approvedBy', 'firstName lastName')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Resource.countDocuments(query)
+      Resource.countDocuments(mongoQuery)
     ]);
 
     res.json({
@@ -236,6 +209,32 @@ router.patch('/resources/:id/toggle-active', adminAuth, async (req, res) => {
   }
 });
 
+// Delete resource (admin)
+router.delete('/resources/:id', adminAuth, async (req, res) => {
+  try {
+    const resource = await Resource.findById(req.params.id);
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        message: 'Resource not found'
+      });
+    }
+
+    await Resource.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'Resource deleted successfully'
+    });
+  } catch (error) {
+    console.error('Admin delete resource error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting resource'
+    });
+  }
+});
+
 // Get all users
 router.get('/users', adminAuth, [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
@@ -285,13 +284,7 @@ router.get('/users', adminAuth, [
       success: true,
       data: {
         users,
-        pagination: {
-          current: page,
-          pages: Math.ceil(total / limit),
-          total,
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
-        }
+        pagination: formatPagination(page, limit, total)
       }
     });
 

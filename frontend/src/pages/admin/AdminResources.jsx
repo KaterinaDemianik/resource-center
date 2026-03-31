@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { Container, Table, Badge, Button, Form, InputGroup, Pagination, Alert, Nav } from 'react-bootstrap';
-import { FiSearch, FiToggleLeft, FiToggleRight, FiTrash2, FiBook, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiSearch, FiToggleLeft, FiToggleRight, FiTrash2, FiBook, FiClock, FiCheckCircle, FiPlus } from 'react-icons/fi';
 import broadcastSync, { SYNC_EVENTS } from '../../utils/broadcastSync';
 
 const fetchResources = async ({ page, search, status }) => {
-  const token = localStorage.getItem('token');
   const { data } = await axios.get('/api/admin/resources', {
-    params: { page, limit: 15, search, status },
-    headers: { Authorization: `Bearer ${token}` }
+    params: { page, limit: 15, search, status }
   });
   return data;
 };
 
 const AdminResources = () => {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -66,10 +66,7 @@ const AdminResources = () => {
 
   const toggleMutation = useMutation({
     mutationFn: async (id) => {
-      const token = localStorage.getItem('token');
-      return axios.patch(`/api/admin/resources/${id}/toggle-active`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      return axios.patch(`/api/admin/resources/${id}/toggle-active`, {});
     },
     onSuccess: () => {
       // Інвалідуємо всі пов'язані запити для автоматичного оновлення
@@ -84,10 +81,7 @@ const AdminResources = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const token = localStorage.getItem('token');
-      return axios.delete(`/api/admin/resources/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      return axios.delete(`/api/admin/resources/${id}`);
     },
     onSuccess: () => {
       // Інвалідуємо всі пов'язані запити для автоматичного оновлення
@@ -134,18 +128,30 @@ const AdminResources = () => {
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
+        flexWrap: 'wrap',
+        gap: '1rem',
         marginBottom: '1.5rem' 
       }}>
         <h2 style={{ color: '#e2e8f0', fontWeight: 600, margin: 0 }}>
           Управління ресурсами
         </h2>
-        <Badge style={{ 
-          backgroundColor: '#7c3aed',
-          fontSize: '13px', 
-          padding: '6px 12px' 
-        }}>
-          {data?.data?.pagination?.total || 0} всього
-        </Badge>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Button
+            variant="primary"
+            onClick={() => navigate('/admin/create-resource')}
+            style={{ backgroundColor: '#7c3aed', borderColor: '#7c3aed' }}
+          >
+            <FiPlus className="me-2" />
+            Створити ресурс
+          </Button>
+          <Badge style={{ 
+            backgroundColor: '#7c3aed',
+            fontSize: '13px', 
+            padding: '6px 12px' 
+          }}>
+            {data?.data?.pagination?.total || 0} всього
+          </Badge>
+        </div>
       </div>
 
       {/* Вкладки фільтрації */}
@@ -304,7 +310,7 @@ const AdminResources = () => {
               </Table>
             </div>
 
-            {data?.data?.pagination && data.data.pagination.totalPages > 1 && (
+            {data?.data?.pagination && (data.data.pagination.totalPages ?? data.data.pagination.pages) > 1 && (
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'center', 
@@ -315,7 +321,7 @@ const AdminResources = () => {
                     disabled={page === 1}
                     onClick={() => setPage(page - 1)}
                   />
-                  {[...Array(data.data.pagination.totalPages)].map((_, idx) => (
+                  {[...Array(data.data.pagination.totalPages ?? data.data.pagination.pages)].map((_, idx) => (
                     <Pagination.Item
                       key={idx + 1}
                       active={page === idx + 1}
@@ -325,7 +331,7 @@ const AdminResources = () => {
                     </Pagination.Item>
                   ))}
                   <Pagination.Next
-                    disabled={page === data.data.pagination.totalPages}
+                    disabled={page === (data.data.pagination.totalPages ?? data.data.pagination.pages)}
                     onClick={() => setPage(page + 1)}
                   />
                 </Pagination>

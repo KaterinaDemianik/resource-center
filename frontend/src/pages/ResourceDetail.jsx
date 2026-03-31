@@ -3,10 +3,12 @@ import { Container, Row, Col, Card, Badge, Button, Spinner, Alert } from 'react-
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
-import { FiArrowLeft, FiExternalLink, FiUser, FiCalendar, FiEye, FiTag } from 'react-icons/fi'
+import { FiArrowLeft, FiExternalLink, FiUser, FiCalendar, FiEye, FiTag, FiEdit } from 'react-icons/fi'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 const ResourceDetail = () => {
   const { id } = useParams()
+  const { user } = useAuth()
 
   const fetchResource = async () => {
     const response = await axios.get(`/api/resources/${id}`)
@@ -79,6 +81,12 @@ const ResourceDetail = () => {
 
   const resource = data?.data
 
+  const authorId = resource?.author?._id?.toString?.() || resource?.author?.toString?.()
+  const canEdit =
+    user &&
+    authorId &&
+    (user.id === authorId || user.role === 'admin')
+
   if (!resource) {
     return (
       <Container className="py-5">
@@ -101,12 +109,22 @@ const ResourceDetail = () => {
       <Row>
         <Col>
           {/* Back Button */}
-          <Link to="/resources" className="text-decoration-none mb-4 d-inline-block">
-            <Button variant="outline-secondary" size="sm">
-              <FiArrowLeft className="me-2" />
-              Назад до ресурсів
-            </Button>
-          </Link>
+          <div className="d-flex flex-wrap gap-2 mb-4 align-items-center">
+            <Link to="/resources" className="text-decoration-none">
+              <Button variant="outline-secondary" size="sm">
+                <FiArrowLeft className="me-2" />
+                Назад до ресурсів
+              </Button>
+            </Link>
+            {canEdit && (
+              <Link to={`/edit-resource/${resource._id}`} className="text-decoration-none">
+                <Button variant="outline-primary" size="sm">
+                  <FiEdit className="me-2" />
+                  Редагувати
+                </Button>
+              </Link>
+            )}
+          </div>
 
           {/* Main Resource Card */}
           <Card className="shadow-sm">

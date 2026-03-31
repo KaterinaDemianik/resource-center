@@ -2,8 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 const connectDB = require('./config/database');
 require('dotenv').config();
 
@@ -19,21 +19,77 @@ connectDB();
 
 const app = express();
 
+/** Keys whose values must not be HTML-stripped (passwords, tokens) */
+const XSS_SKIP_KEYS = new Set([
+  'password',
+  'currentPassword',
+  'newPassword',
+  'confirmPassword',
+  'token',
+  'emailVerificationToken',
+  'resetPasswordToken'
+]);
+
+/**
+ * Recursively strip HTML-like tags from string fields to reduce stored/reflected XSS risk.
+ * Skips password and token fields.
+ */
+const sanitizeBodyForXss = (value, keyHint) => {
+  if (keyHint && XSS_SKIP_KEYS.has(keyHint)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    return value.replace(/<[^>]*>/g, '').replace(/javascript:/gi, '');
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => sanitizeBodyForXss(v));
+  }
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      out[k] = sanitizeBodyForXss(v, k);
+    }
+    return out;
+  }
+  return value;
+};
+
+const authRouteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many attempts, please try again later.' }
+});
+
 /**
  * Налаштування middleware
  */
 const configureMiddleware = () => {
-  // Security headers
+  const isProd = NODE_ENV === 'production';
+
+  // Security headers — stricter CSP in production (GraphiQL needs relaxations in dev only)
   app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Дозволити inline scripts та eval для GraphiQL
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "https:"],
-      }
-    }
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: isProd
+      ? {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+            connectSrc: ["'self'"],
+            frameSrc: ["'none'"]
+          }
+        }
+      : {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", 'data:', 'https:']
+          }
+        }
   }));
 
   // CORS configuration
@@ -45,9 +101,22 @@ const configureMiddleware = () => {
   // Logging
   app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev'));
 
+  // Rate limiting for auth endpoints (login/register brute-force mitigation)
+  app.use('/api/auth/login', authRouteLimiter);
+  app.use('/api/auth/register', authRouteLimiter);
+
   // Body parsers
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // NoSQL injection mitigation + XSS string cleanup on JSON bodies
+  app.use(mongoSanitize({ replaceWith: '_' }));
+  app.use((req, res, next) => {
+    if (req.body && typeof req.body === 'object') {
+      req.body = sanitizeBodyForXss(req.body);
+    }
+    next();
+  });
 };
 
 // Статична папка для завантажених файлів
@@ -57,25 +126,6 @@ app.use('/uploads', express.static('uploads', {
     res.set('Access-Control-Allow-Origin', '*');
   }
 }));
-
-/**
- * Налаштування сесій
- */
-const configureSession = () => {
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'resource-center-secret',
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/resource-center'
-    }),
-    cookie: {
-      secure: NODE_ENV === 'production',
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
-  }));
-};
 
 /**
  * Налаштування роутів
@@ -91,7 +141,7 @@ const configureRoutes = () => {
     });
   });
 
-  // API routes
+  // API routes (JWT-only; no server session store)
   app.use('/api/auth', require('./routes/auth'));
   app.use('/api/resources', require('./routes/resources'));
   app.use('/api/admin', require('./routes/admin'));
@@ -105,8 +155,8 @@ const configureRoutes = () => {
 const configureErrorHandling = () => {
   app.use((err, req, res, next) => {
     console.error('Error:', err.stack);
-    
-    res.status(err.status || 500).json({ 
+
+    res.status(err.status || 500).json({
       success: false,
       message: err.message || 'Something went wrong!',
       error: NODE_ENV === 'production' ? {} : {
@@ -130,16 +180,15 @@ const configureErrorHandling = () => {
  */
 const startServer = () => {
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📝 Environment: ${NODE_ENV}`);
-    console.log(`🔗 Client URL: ${CLIENT_URL}`);
-    console.log(`🗄️  MongoDB: ${process.env.MONGODB_URI ? 'Remote' : 'localhost'}`);
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${NODE_ENV}`);
+    console.log(`Client URL: ${CLIENT_URL}`);
+    console.log(`MongoDB: ${process.env.MONGODB_URI ? 'Remote' : 'localhost'}`);
   });
 };
 
 // Ініціалізація сервера
 configureMiddleware();
-configureSession();
 configureRoutes();
 configureErrorHandling();
 startServer();

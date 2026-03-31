@@ -4,30 +4,27 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { FiBell, FiCheck, FiTrash2, FiCheckCircle } from 'react-icons/fi'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 const Notifications = () => {
+  const { token } = useAuth()
   const [page, setPage] = useState(1)
   const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['notifications', page],
     queryFn: async () => {
-      const token = localStorage.getItem('token')
       const response = await axios.get('/api/notifications', {
-        params: { page, limit: 20 },
-        headers: { Authorization: `Bearer ${token}` }
+        params: { page, limit: 20 }
       })
       return response.data
     },
-    enabled: !!localStorage.getItem('token')
+    enabled: !!token
   })
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id) => {
-      const token = localStorage.getItem('token')
-      return axios.patch(`/api/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      return axios.patch(`/api/notifications/${id}/read`, {})
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] })
@@ -37,10 +34,7 @@ const Notifications = () => {
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const token = localStorage.getItem('token')
-      return axios.patch('/api/notifications/mark-all-read', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      return axios.patch('/api/notifications/mark-all-read', {})
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] })
@@ -50,10 +44,7 @@ const Notifications = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const token = localStorage.getItem('token')
-      return axios.delete(`/api/notifications/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      return axios.delete(`/api/notifications/${id}`)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] })

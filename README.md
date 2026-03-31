@@ -81,9 +81,9 @@ npm run dev
 ### 4. Доступ до застосунку
 
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-- **GraphQL Playground**: http://localhost:5000/graphql
-- **API Health Check**: http://localhost:5000/api/health
+- **Backend API**: http://localhost:5001
+- **GraphQL Playground**: http://localhost:5001/graphql
+- **API Health Check**: http://localhost:5001/api/health
 
 ## API Документація
 
@@ -113,7 +113,7 @@ npm run dev
 
 ### GraphQL API
 - **Endpoint**: `POST /graphql`
-- **GraphiQL**: http://localhost:5000/graphql (в режимі розробки)
+- **GraphiQL**: http://localhost:5001/graphql (в режимі розробки)
 
 Приклади запитів:
 ```graphql
@@ -142,7 +142,7 @@ mutation {
 ## Тестування API (Postman)
 
 
-Імпортуйте колекцію з `postman/Resource_Center_API.postman_collection.json` для тестування всіх endpoints.
+Імпортуйте колекцію з `postman/Resource-Center-API.postman_collection.json` для тестування всіх endpoints.
 
 ## Структура проекту
 

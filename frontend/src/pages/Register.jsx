@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 const Register = () => {
-  const navigate = useNavigate();
+  const { register: registerUser } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -183,22 +184,14 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          password: formData.password
-        })
+      const result = await registerUser({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (result.success) {
         setSuccessMessage('Реєстрація успішна! Перевірте вашу електронну пошту для підтвердження.');
         setFormData({
           firstName: '',
@@ -208,7 +201,7 @@ const Register = () => {
           confirmPassword: ''
         });
       } else {
-        setServerError(data.message || 'Помилка реєстрації. Спробуйте ще раз.');
+        setServerError(result.message || 'Помилка реєстрації. Спробуйте ще раз.');
       }
     } catch (error) {
       console.error('Registration error:', error);
