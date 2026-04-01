@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
   const persistSession = useCallback((newToken, userData) => {
     if (newToken) {
       localStorage.setItem(TOKEN_KEY, newToken)
+      axios.defaults.headers.common.Authorization = `Bearer ${newToken}`
       setToken(newToken)
     }
     if (userData) {

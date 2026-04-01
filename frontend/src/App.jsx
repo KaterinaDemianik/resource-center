@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Routes, Route, Link, useNavigate, NavLink } from 'react-router-dom'
 import { Container, Navbar, Nav, Button } from 'react-bootstrap'
 import { Book, Search } from 'react-bootstrap-icons'
 import { FiPlus, FiBell } from 'react-icons/fi'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { useAuth } from './contexts/AuthContext.jsx'
 import ApiToggle from './components/ApiToggle'
@@ -150,6 +150,7 @@ const Home = () => {
 function App() {
   const navigate = useNavigate()
   const { user, token, logout } = useAuth()
+  const queryClient = useQueryClient()
 
   const { data: userData } = useQuery({
     queryKey: ['currentUser'],
@@ -172,20 +173,42 @@ function App() {
 
   const displayUser = userData || user
 
-  const { data: unreadData } = useQuery({
-    queryKey: ['unreadCount'],
+  const {
+    data: unreadData,
+    refetch: refetchUnreadCount
+  } = useQuery({
+    queryKey: ['unreadCount', token],
     queryFn: async () => {
       if (!token) return { count: 0 }
       try {
-        const response = await axios.get('/api/notifications/unread-count')
+        const response = await axios.get('/api/notifications/unread-count', {
+          params: { t: Date.now() },
+          headers: {
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+            Expires: '0'
+          }
+        })
         return response.data
       } catch {
         return { count: 0 }
       }
     },
     enabled: !!token,
-    refetchInterval: 30000
+    refetchInterval: 10000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0
   })
+
+  const unreadCount = Number(unreadData?.count || 0)
+
+  useEffect(() => {
+    if (!token || !(userData || user)) return
+
+    queryClient.setQueryData(['unreadCount', token], (current) => current || { count: 0 })
+    refetchUnreadCount()
+  }, [token, userData, user, queryClient, refetchUnreadCount])
 
   const handleLogout = async () => {
     await logout()
@@ -199,7 +222,20 @@ function App() {
           <Navbar.Brand as={Link} to="/">
             Ресурсний центр
           </Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
+          <Navbar.Toggle
+            aria-controls="basic-navbar-nav"
+            style={{
+              borderColor: 'rgba(255, 255, 255, 0.35)',
+              boxShadow: 'none'
+            }}
+          >
+            <span
+              className="navbar-toggler-icon"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.5' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e")`
+              }}
+            />
+          </Navbar.Toggle>
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto" style={{ gap: '1.5rem', alignItems: 'center' }}>
               <ApiToggle />
@@ -253,26 +289,44 @@ function App() {
                     position: 'relative'
                   })}
                 >
-                  <FiBell />
-                  {unreadData?.count > 0 && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '-5px',
-                        right: '-5px',
-                        backgroundColor: '#ef4444',
-                        color: 'white',
-                        borderRadius: '50%',
-                        padding: '2px 6px',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        minWidth: '18px',
-                        textAlign: 'center'
-                      }}
-                    >
-                      {unreadData.count > 99 ? '99+' : unreadData.count}
-                    </span>
-                  )}
+                  <span
+                    style={{
+                      position: 'relative',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      paddingRight: unreadCount > 0 ? '10px' : 0
+                    }}
+                  >
+                    <FiBell size={20} />
+                    {unreadCount > 0 && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: '-12px',
+                          right: '-16px',
+                          backgroundColor: '#dc2626',
+                          color: '#ffffff',
+                          borderRadius: '999px',
+                          padding: '3px 7px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          minWidth: '24px',
+                          minHeight: '24px',
+                          lineHeight: 1.5,
+                          textAlign: 'center',
+                          boxShadow: '0 0 0 2px #0f172a, 0 4px 12px rgba(220, 38, 38, 0.45)',
+                          border: '2px solid #ffffff',
+                          zIndex: 3,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </span>
                 </Nav.Link>
               )}
               {displayUser ? (

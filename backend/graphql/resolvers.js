@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const dns = require('dns').promises;
 const { GraphQLError } = require('graphql');
 const User = require('../models/User');
 const Resource = require('../models/Resource');
@@ -54,6 +55,95 @@ const formatResponse = (success, data = null, message = null) => {
   }
   
   return response;
+};
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const URL_REGEX = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
+const VALID_CATEGORIES = ['education', 'technology', 'health', 'business', 'entertainment', 'other'];
+
+const verifyEmailDomain = async (email) => {
+  try {
+    const domain = email.split('@')[1];
+    const mxRecords = await dns.resolveMx(domain);
+    return mxRecords && mxRecords.length > 0;
+  } catch (error) {
+    return false;
+  }
+};
+
+const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
+
+const validateResourcePayload = (input, { requireAllFields = false } = {}) => {
+  const normalized = {
+    title: input.title !== undefined ? normalizeString(input.title) : undefined,
+    description: input.description !== undefined ? normalizeString(input.description) : undefined,
+    category: input.category !== undefined ? input.category : undefined,
+    url: input.url !== undefined ? normalizeString(input.url) : undefined,
+    tags: input.tags !== undefined ? input.tags : undefined
+  };
+
+  if (requireAllFields) {
+    if (!normalized.title || !normalized.description || !normalized.category || !normalized.url) {
+      return { valid: false, message: 'Назва, опис, категорія та URL є обов\'язковими полями' };
+    }
+  }
+
+  if (normalized.title !== undefined) {
+    if (!normalized.title) {
+      return { valid: false, message: 'Назва не може бути порожньою' };
+    }
+    if (normalized.title.length > 200) {
+      return { valid: false, message: 'Назва не може перевищувати 200 символів' };
+    }
+  }
+
+  if (normalized.description !== undefined) {
+    if (!normalized.description) {
+      return { valid: false, message: 'Опис не може бути порожнім' };
+    }
+    if (normalized.description.length > 1000) {
+      return { valid: false, message: 'Опис не може перевищувати 1000 символів' };
+    }
+  }
+
+  if (normalized.category !== undefined && !VALID_CATEGORIES.includes(normalized.category)) {
+    return { valid: false, message: 'Невірна категорія' };
+  }
+
+  if (normalized.tags !== undefined) {
+    if (!Array.isArray(normalized.tags)) {
+      return { valid: false, message: 'Теги мають бути масивом' };
+    }
+
+    for (const tag of normalized.tags) {
+      const normalizedTag = normalizeString(tag);
+      if (!normalizedTag) {
+        return { valid: false, message: 'Тег не може бути порожнім' };
+      }
+      if (normalizedTag.length > 30) {
+        return { valid: false, message: 'Кожен тег не може перевищувати 30 символів' };
+      }
+    }
+  }
+
+  if (normalized.url !== undefined) {
+    if (!normalized.url) {
+      return { valid: false, message: 'URL не може бути порожнім' };
+    }
+    if (!URL_REGEX.test(normalized.url)) {
+      return { valid: false, message: 'Будь ласка, введіть коректний URL' };
+    }
+  }
+
+  return {
+    valid: true,
+    normalized: {
+      ...normalized,
+      tags: normalized.tags !== undefined
+        ? normalized.tags.map((tag) => normalizeString(tag))
+        : undefined
+    }
+  };
 };
 
 const resolvers = {
@@ -307,27 +397,47 @@ const resolvers = {
    */
   register: async ({ input }) => {
     try {
-      const { firstName, lastName, email, password } = input;
+      const firstName = normalizeString(input.firstName);
+      const lastName = normalizeString(input.lastName);
+      const email = normalizeString(input.email).toLowerCase();
+      const password = input.password;
 
-      // Валідація вхідних даних
       if (!firstName || !lastName || !email || !password) {
         return formatResponse(false, null, 'Всі поля є обов\'язковими');
       }
 
-      // Перевірка чи користувач вже існує
+      if (firstName.length > 50) {
+        return formatResponse(false, null, 'Ім\'я не може перевищувати 50 символів');
+      }
+
+      if (lastName.length > 50) {
+        return formatResponse(false, null, 'Прізвище не може перевищувати 50 символів');
+      }
+
+      if (!EMAIL_REGEX.test(email)) {
+        return formatResponse(false, null, 'Будь ласка, введіть коректний email');
+      }
+
+      if (password.length < 6) {
+        return formatResponse(false, null, 'Пароль має містити щонайменше 6 символів');
+      }
+
+      const isValidDomain = await verifyEmailDomain(email);
+      if (!isValidDomain) {
+        return formatResponse(false, null, 'Email адреса недійсна. Перевірте правильність введеного домену.');
+      }
+
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return formatResponse(false, null, 'Користувач з таким email вже існує');
       }
 
-      // Генерація токену для верифікації email
       const emailVerificationToken = crypto.randomBytes(32).toString('hex');
 
-      // Створення нового користувача
       const user = new User({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.toLowerCase().trim(),
+        firstName,
+        lastName,
+        email,
         password,
         emailVerificationToken
       });
@@ -368,15 +478,18 @@ const resolvers = {
    */
   login: async ({ input }) => {
     try {
-      const { email, password } = input;
+      const email = normalizeString(input.email).toLowerCase();
+      const password = input.password;
 
-      // Валідація вхідних даних
       if (!email || !password) {
         return formatResponse(false, null, 'Email та пароль є обов\'язковими');
       }
 
-      // Пошук користувача
-      const user = await User.findOne({ email: email.toLowerCase().trim() });
+      if (!EMAIL_REGEX.test(email)) {
+        return formatResponse(false, null, 'Будь ласка, введіть коректний email');
+      }
+
+      const user = await User.findOne({ email });
       if (!user) {
         return formatResponse(false, null, 'Невірні облікові дані');
       }
@@ -461,40 +574,32 @@ const resolvers = {
     try {
       const user = checkAuth(context);
 
-      // Валідація вхідних даних
-      const { title, description, category, url, tags } = input;
-      
-      if (!title || !description || !category || !url) {
-        return { success: false, message: 'Назва, опис, категорія та URL є обов\'язковими полями', resource: null };
+      const validation = validateResourcePayload(input, { requireAllFields: true });
+      if (!validation.valid) {
+        return { success: false, message: validation.message, resource: null };
       }
 
-      if (title.length > 200) {
-        return { success: false, message: 'Назва не може перевищувати 200 символів', resource: null };
-      }
-
-      if (description.length > 2000) {
-        return { success: false, message: 'Опис не може перевищувати 2000 символів', resource: null };
-      }
+      const {
+        title,
+        description,
+        category,
+        url,
+        tags
+      } = validation.normalized;
 
       if (url.length > 500) {
         return { success: false, message: 'URL не може перевищувати 500 символів', resource: null };
       }
 
-      const validCategories = ['education', 'technology', 'health', 'business', 'entertainment', 'other'];
-      if (!validCategories.includes(category)) {
-        return { success: false, message: 'Невірна категорія', resource: null };
-      }
-
-      // Створення нового ресурсу
       const resourceData = {
-        title: title.trim(),
-        description: description.trim(),
+        title,
+        description,
         category,
-        url: url.trim(),
+        url,
         tags: Array.isArray(tags) ? tags : [],
         author: user.userId,
         isActive: true,
-        isApproved: false, // Потрібна модерація
+        isApproved: false,
         views: 0
       };
 
@@ -516,6 +621,11 @@ const resolvers = {
     try {
       const user = checkAuth(context);
 
+      const validation = validateResourcePayload(input, { requireAllFields: false });
+      if (!validation.valid) {
+        return { success: false, message: validation.message };
+      }
+
       const resource = await Resource.findById(id);
       if (!resource) {
         return { success: false, message: 'Ресурс не знайдено' };
@@ -526,15 +636,17 @@ const resolvers = {
         return { success: false, message: 'Немає прав на редагування' };
       }
 
-      // Update fields
-      Object.keys(input).forEach(key => {
-        if (input[key] !== undefined) {
-          resource[key] = input[key];
+      Object.keys(validation.normalized).forEach(key => {
+        if (validation.normalized[key] !== undefined) {
+          resource[key] = validation.normalized[key];
         }
       });
 
-      // Reset approval if content changed
-      if (input.title || input.description || input.url) {
+      if (validation.normalized.url && validation.normalized.url.length > 500) {
+        return { success: false, message: 'URL не може перевищувати 500 символів' };
+      }
+
+      if (validation.normalized.title || validation.normalized.description || validation.normalized.url) {
         resource.isApproved = false;
         resource.approvedBy = null;
         resource.approvedAt = null;
@@ -592,6 +704,14 @@ const resolvers = {
 
       await resource.populate(['author', 'approvedBy']);
 
+      await createNotification(
+        resource.author._id,
+        'resource_approved',
+        'Ресурс схвалено',
+        `Ваш ресурс "${resource.title}" був схвалений модератором і тепер доступний для всіх користувачів.`,
+        resource._id
+      );
+
       return { success: true, message: 'Ресурс схвалено', resource };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
@@ -616,6 +736,14 @@ const resolvers = {
 
       await resource.populate('author');
 
+      await createNotification(
+        resource.author._id,
+        'resource_rejected',
+        'Ресурс відхилено',
+        `Ваш ресурс "${resource.title}" був відхилений модератором. Будь ласка, перевірте відповідність правилам та спробуйте знову.`,
+        resource._id
+      );
+
       return { success: true, message: 'Схвалення відхилено', resource };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
@@ -633,10 +761,21 @@ const resolvers = {
         return { success: false, message: 'Ресурс не знайдено' };
       }
 
+      const wasActive = resource.isActive;
       resource.isActive = !resource.isActive;
       await resource.save();
 
       await resource.populate(['author', 'approvedBy']);
+
+      if (wasActive && !resource.isActive) {
+        await createNotification(
+          resource.author._id,
+          'resource_deactivated',
+          'Ресурс деактивовано',
+          `Ваш ресурс "${resource.title}" був деактивований адміністратором.`,
+          resource._id
+        );
+      }
 
       return {
         success: true,

@@ -162,7 +162,7 @@ const ResourcesWithApi = () => {
             resources={data?.data?.resources || []}
             isLoading={isLoading}
             error={error}
-            onDelete={handleDelete}
+            onDeleteResource={handleDelete}
             pagination={data?.data?.pagination}
             currentPage={currentPage}
             onPageChange={setCurrentPage}
@@ -176,7 +176,7 @@ const ResourcesWithApi = () => {
               resources={data?.data?.resources || []}
               isLoading={isLoading}
               error={error}
-              onDelete={handleDelete}
+              onDeleteResource={handleDelete}
               pagination={data?.data?.pagination}
               currentPage={currentPage}
               onPageChange={setCurrentPage}
