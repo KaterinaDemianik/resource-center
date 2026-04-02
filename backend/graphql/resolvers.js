@@ -5,6 +5,7 @@ const { GraphQLError } = require('graphql');
 const User = require('../models/User');
 const Resource = require('../models/Resource');
 const { sendVerificationEmail } = require('../utils/email');
+const { createNotification } = require('../routes/notifications');
 const {
   buildPublicResourceQuery,
   buildAdminResourceStatusQuery,
@@ -461,9 +462,12 @@ const resolvers = {
         role: user.role
       };
 
-      return formatResponse(true, { 
-        user: userData 
-      }, 'Реєстрація успішна. Перевірте email для підтвердження.');
+      return {
+        success: true,
+        message: 'Реєстрація успішна. Перевірте email для підтвердження.',
+        token: null,
+        user: userData
+      };
     } catch (error) {
       console.error('GraphQL register error:', error);
       return formatResponse(false, null, 'Помилка реєстрації');
@@ -530,10 +534,12 @@ const resolvers = {
         role: user.role
       };
 
-      return formatResponse(true, { 
+      return {
+        success: true,
+        message: 'Вхід успішний',
         token,
-        user: userData 
-      }, 'Вхід успішний');
+        user: userData
+      };
     } catch (error) {
       console.error('GraphQL login error:', error);
       return formatResponse(false, null, 'Помилка входу');

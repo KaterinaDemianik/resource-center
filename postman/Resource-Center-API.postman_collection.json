@@ -682,6 +682,117 @@
 					}
 				},
 				{
+					"name": "GraphQL - Get Single Resource",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetResource($id: ID!) { resource(id: $id) { success message resource { id title description category tags url views author { firstName lastName } isActive isApproved approvedAt createdAt updatedAt } } }\",\n  \"variables\": {\n    \"id\": \"RESOURCE_ID_HERE\"\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL запит для отримання одного ресурсу за id"
+					}
+				},
+				{
+					"name": "GraphQL - Update Resource",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation UpdateResource($id: ID!, $input: ResourceUpdateInput!) { updateResource(id: $id, input: $input) { success message resource { id title description category tags url isApproved updatedAt } } }\",\n  \"variables\": {\n    \"id\": \"RESOURCE_ID_HERE\",\n    \"input\": {\n      \"title\": \"Оновлена назва ресурсу\",\n      \"description\": \"Оновлений опис ресурсу\",\n      \"category\": \"technology\",\n      \"tags\": [\"оновлено\", \"тест\"],\n      \"url\": \"https://example.com/updated\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для оновлення ресурсу за id (тільки автор або адмін)"
+					}
+				},
+				{
+					"name": "GraphQL - Delete Resource",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation DeleteResource($id: ID!) { deleteResource(id: $id) { success message } }\",\n  \"variables\": {\n    \"id\": \"RESOURCE_ID_HERE\"\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для видалення ресурсу за id (тільки автор або адмін)"
+					}
+				},
+				{
+					"name": "GraphQL - Toggle Resource Active",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ToggleResourceActive($id: ID!) { toggleResourceActive(id: $id) { success message resource { id title isActive } } }\",\n  \"variables\": {\n    \"id\": \"RESOURCE_ID_HERE\"\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для активації/деактивації ресурсу за id (тільки адмін)"
+					}
+				},
+				{
 					"name": "GraphQL - Admin Stats",
 					"request": {
 						"method": "POST",
