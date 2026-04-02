@@ -569,6 +569,42 @@ const resolvers = {
     }
   },
 
+  changePassword: async ({ input }, context) => {
+    try {
+      const authUser = checkAuth(context);
+
+      const currentPassword = input.currentPassword;
+      const newPassword = input.newPassword;
+
+      if (!currentPassword || !newPassword) {
+        return { success: false, message: 'Поточний та новий паролі є обов\'язковими' };
+      }
+
+      if (newPassword.length < 6) {
+        return { success: false, message: 'Новий пароль має містити щонайменше 6 символів' };
+      }
+
+      const user = await User.findById(authUser.userId);
+      if (!user) {
+        return { success: false, message: 'Користувача не знайдено' };
+      }
+
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        return { success: false, message: 'Поточний пароль невірний' };
+      }
+
+      user.password = newPassword;
+      await user.save();
+
+      return { success: true, message: 'Пароль успішно змінено' };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('GraphQL changePassword error:', error);
+      return { success: false, message: 'Помилка зміни паролю' };
+    }
+  },
+
   /**
    * Створення нового ресурсу з валідацією даних
    * @param {Object} args - Аргументи GraphQL запиту

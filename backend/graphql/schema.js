@@ -101,6 +101,11 @@ const schema = buildSchema(`
     url: String
   }
 
+  input ChangePasswordInput {
+    currentPassword: String!
+    newPassword: String!
+  }
+
   input ResourceUpdateInput {
     title: String
     description: String
@@ -137,6 +142,7 @@ const schema = buildSchema(`
     login(input: LoginInput!): AuthPayload!
     logout: MessagePayload!
     verifyEmail(token: String!): MessagePayload!
+    changePassword(input: ChangePasswordInput!): MessagePayload!
     
     # Resource mutations (authenticated)
     createResource(input: ResourceInput!): ResourcePayload!

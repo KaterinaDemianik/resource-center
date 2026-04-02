@@ -549,6 +549,41 @@
 					}
 				},
 				{
+					"name": "Partial Update Resource",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Оновлена назва ресурсу\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/resources/:id",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["api", "resources", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "RESOURCE_ID_HERE"
+								}
+							]
+						},
+						"description": "Частково оновити ресурс — лише передані поля (PATCH)"
+					}
+				},
+				{
 					"name": "Toggle User Active",
 					"request": {
 						"method": "PATCH",
@@ -819,6 +854,88 @@
 							"path": ["graphql"]
 						},
 						"description": "GraphQL запит для отримання статистики (тільки адмін)"
+					}
+				},
+				{
+					"name": "GraphQL - Verify Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation VerifyEmail($token: String!) { verifyEmail(token: $token) { success message } }\",\n  \"variables\": {\n    \"token\": \"EMAIL_VERIFICATION_TOKEN_HERE\"\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для підтвердження email за токеном"
+					}
+				},
+				{
+					"name": "GraphQL - Get Current User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query { me { id firstName lastName email role isActive emailVerified createdAt } }\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL запит для отримання даних поточного авторизованого користувача"
+					}
+				},
+				{
+					"name": "GraphQL - Change Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ChangePassword($input: ChangePasswordInput!) { changePassword(input: $input) { success message } }\",\n  \"variables\": {\n    \"input\": {\n      \"currentPassword\": \"password123\",\n      \"newPassword\": \"newPassword456\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для зміни паролю авторизованого користувача"
 					}
 				}
 			]

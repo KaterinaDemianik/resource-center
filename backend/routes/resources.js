@@ -215,6 +215,71 @@ router.post('/', auth, [
   }
 });
 
+// Partial update resource — PATCH (same validation as PUT, all fields optional)
+router.patch('/:id', auth, [
+  body('title')
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage('Title cannot be empty')
+    .isLength({ max: 200 })
+    .withMessage('Title cannot exceed 200 characters'),
+  body('description')
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage('Description cannot be empty')
+    .isLength({ max: 1000 })
+    .withMessage('Description cannot exceed 1000 characters'),
+  body('category')
+    .optional()
+    .isIn(['education', 'technology', 'health', 'business', 'entertainment', 'other'])
+    .withMessage('Invalid category'),
+  body('tags')
+    .optional()
+    .isArray()
+    .withMessage('Tags must be an array'),
+  body('url')
+    .optional()
+    .isURL()
+    .withMessage('Please enter a valid URL')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, message: 'Validation errors', errors: errors.array() });
+    }
+
+    const resource = await Resource.findById(req.params.id);
+    if (!resource) {
+      return res.status(404).json({ success: false, message: 'Resource not found' });
+    }
+
+    if (resource.author.toString() !== req.user.userId && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this resource' });
+    }
+
+    const allowedUpdates = ['title', 'description', 'category', 'tags', 'url'];
+    allowedUpdates.forEach(field => {
+      if (req.body[field] !== undefined) resource[field] = req.body[field];
+    });
+
+    if (req.body.title || req.body.description || req.body.url) {
+      resource.isApproved = false;
+      resource.approvedBy = null;
+      resource.approvedAt = null;
+    }
+
+    await resource.save();
+    await resource.populate('author', 'firstName lastName');
+
+    res.json({ success: true, message: 'Resource updated successfully', data: resource });
+  } catch (error) {
+    console.error('Patch resource error:', error);
+    res.status(500).json({ success: false, message: 'Server error while updating resource' });
+  }
+});
+
 // Update resource (author or admin only)
 router.put('/:id', auth, [
   body('title')
