@@ -14,6 +14,7 @@ const schema = buildSchema(`
     role: String!
     isActive: Boolean!
     emailVerified: Boolean!
+    avatar: String
     createdAt: String!
     updatedAt: String!
   }
@@ -151,9 +152,10 @@ const schema = buildSchema(`
     
     # Admin mutations
     approveResource(id: ID!): ResourcePayload!
-    rejectResource(id: ID!): ResourcePayload!
+    rejectResource(id: ID!, reason: String): ResourcePayload!
     toggleResourceActive(id: ID!): ResourcePayload!
     toggleUserActive(id: ID!): MessagePayload!
+    uploadAvatar(base64: String!): MessagePayload!
   }
 `);
 

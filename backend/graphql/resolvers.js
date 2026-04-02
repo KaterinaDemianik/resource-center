@@ -762,7 +762,7 @@ const resolvers = {
     }
   },
 
-  rejectResource: async ({ id }, context) => {
+  rejectResource: async ({ id, reason }, context) => {
     try {
       checkAdmin(context);
 
@@ -778,11 +778,12 @@ const resolvers = {
 
       await resource.populate('author');
 
+      const reasonText = reason ? ` Причина: ${reason}` : ' Будь ласка, перевірте відповідність правилам та спробуйте знову.';
       await createNotification(
         resource.author._id,
         'resource_rejected',
         'Ресурс відхилено',
-        `Ваш ресурс "${resource.title}" був відхилений модератором. Будь ласка, перевірте відповідність правилам та спробуйте знову.`,
+        `Ваш ресурс "${resource.title}" був відхилений модератором.${reasonText}`,
         resource._id
       );
 
@@ -791,6 +792,32 @@ const resolvers = {
       if (error instanceof GraphQLError) throw error;
       console.error('GraphQL rejectResource error:', error);
       return { success: false, message: 'Помилка відхилення ресурсу' };
+    }
+  },
+
+  uploadAvatar: async ({ base64 }, context) => {
+    try {
+      const authUser = checkAuth(context);
+
+      if (!base64 || typeof base64 !== 'string') {
+        return { success: false, message: 'base64 рядок є обов\'язковим' };
+      }
+
+      if (!base64.startsWith('data:image/')) {
+        return { success: false, message: 'Невірний формат зображення. Очікується base64 data URL' };
+      }
+
+      if (base64.length > 2 * 1024 * 1024) {
+        return { success: false, message: 'Розмір аватара не може перевищувати 2MB' };
+      }
+
+      await User.findByIdAndUpdate(authUser.userId, { avatar: base64 });
+
+      return { success: true, message: 'Аватар успішно оновлено' };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('GraphQL uploadAvatar error:', error);
+      return { success: false, message: 'Помилка завантаження аватара' };
     }
   },
 

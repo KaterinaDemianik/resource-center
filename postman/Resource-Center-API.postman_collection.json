@@ -937,6 +937,180 @@
 						},
 						"description": "GraphQL мутація для зміни паролю авторизованого користувача"
 					}
+				},
+				{
+					"name": "GraphQL - Get My Resources",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetMyResources($page: Int, $limit: Int) { myResources(page: $page, limit: $limit) { success total resources { id title category isActive isApproved createdAt } } }\",\n  \"variables\": {\n    \"page\": 1,\n    \"limit\": 10\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL запит для отримання ресурсів поточного користувача"
+					}
+				},
+				{
+					"name": "GraphQL - Approve Resource",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ApproveResource($id: ID!) { approveResource(id: $id) { success message resource { id title isApproved approvedAt } } }\",\n  \"variables\": {\n    \"id\": \"RESOURCE_ID_HERE\"\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для схвалення ресурсу адміном"
+					}
+				},
+				{
+					"name": "GraphQL - Reject Resource",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation RejectResource($id: ID!, $reason: String) { rejectResource(id: $id, reason: $reason) { success message resource { id title isApproved } } }\",\n  \"variables\": {\n    \"id\": \"RESOURCE_ID_HERE\",\n    \"reason\": \"Не відповідає правилам платформи\"\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для відхилення ресурсу адміном з опціональною причиною"
+					}
+				},
+				{
+					"name": "GraphQL - Get Admin Users",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetAdminUsers($status: String, $page: Int, $limit: Int) { adminUsers(status: $status, page: $page, limit: $limit) { success total users { id firstName lastName email role isActive emailVerified createdAt } } }\",\n  \"variables\": {\n    \"status\": null,\n    \"page\": 1,\n    \"limit\": 10\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL запит для отримання списку всіх користувачів (тільки адмін)"
+					}
+				},
+				{
+					"name": "GraphQL - Partial Update Resource",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation PartialUpdateResource($id: ID!, $input: ResourceUpdateInput!) { updateResource(id: $id, input: $input) { success message resource { id title category updatedAt } } }\",\n  \"variables\": {\n    \"id\": \"RESOURCE_ID_HERE\",\n    \"input\": {\n      \"title\": \"Нова назва ресурсу\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для часткового оновлення ресурсу — лише передані поля змінюються"
+					}
+				},
+				{
+					"name": "GraphQL - Upload Avatar",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation UploadAvatar($base64: String!) { uploadAvatar(base64: $base64) { success message } }\",\n  \"variables\": {\n    \"base64\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5001",
+							"path": ["graphql"]
+						},
+						"description": "GraphQL мутація для завантаження аватара як base64 рядка"
+					}
 				}
 			]
 		}
